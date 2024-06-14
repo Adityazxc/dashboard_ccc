@@ -16,7 +16,7 @@
     <div class="card-header bg-primary text-white px-4">
         <div class="d-flex justify-content-between align-item-center">
             <div class="me-4">
-                <h2 class="card-title text-white mb-0 ">Customers</h2>
+                <h2 class="card-title text-white mb-0 ">Report</h2>
                 <div class="card-subtitile">Details and history</div>
             </div>
 
@@ -41,6 +41,8 @@
                             <th>Service</th>
                             <th>E-Voucher</th>
                             <th>Status Email</th>
+                            <th>Send Email By</th>
+                            <th>Date Send Email</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -65,7 +67,7 @@
             "processing": true,
             "serverSide": true,
             "ajax": {
-                "url": "<?= base_url('cs/getdatatables_send_email') ?>",
+                "url": "<?= base_url('cs/getdatatables_report') ?>",
                 "type": "POST",
                 "data": function (data) {
                     data.status = $('[name="status"]').val();
@@ -75,7 +77,7 @@
                 }
             },
             "columnDefs": [{
-                "targets": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+                "targets": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11],
                 "orderable": false
             },
             {
@@ -119,41 +121,3 @@
 
 </script>
 
-<!-- Modal -->
-<div class="modal fade" id="ModalEditEmail" tabindex="-1" role="dialog" aria-labelledby="Modal" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="ModalLabel"></h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <form id="upload_data" action="<?= base_url('cs/update_email') ?>" method="POST" enctype="multipart/form-data">
-                <div class="modal-body">
-                    <input type="hidden" id="customerID" name="customerID" autocomplete="off">
-                    <input type="email" class="form-control" name="newEmail" id="newEmail" placeholder="Input Email"
-                        autocomplete="off" required>
-                    <input type="hidden" id="ModaladdCustomerModal_csrf"
-                        name="<?= $this->security->get_csrf_token_name() ?>"
-                        value="<?= $this->security->get_csrf_hash() ?>" />
-                </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary col-md-3">Send Email</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<script>
-     $(document).ready(function () {
-        $("#upload_data").click(function () {
-            $.getJSON('<?= base_url('admin/get_csrf_json') ?>', function (res) {
-                if (res.status == "Success") {
-                    $('[id="ModaladdCustomerModal_csrf"]').val(res.get_csrf_hash);
-                }
-            });
-        });        
-    });
-</script>

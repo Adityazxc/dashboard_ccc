@@ -42,9 +42,7 @@ class Customer_model extends CI_Model
         $this->db->where('voucher', $keyword);
         $query = $this->db->get('customers');
 
-        if ($query->num_rows() > 0) {
-            $this->db->where('voucher', $keyword);
-            $this->db->update('customers', ['status' => 'Y']);
+        if ($query->num_rows() > 0) {          
             $result = $query->result();
         } else {
             $result = false;
@@ -79,33 +77,16 @@ class Customer_model extends CI_Model
         $data = array(
             'awbno_claim' => $this->input->post('resi'),
             'id_user' => $id_user,
-            
+            'status'=>'Y'
         );
 
-        $this->db->where('id', $this->input->post('id'));
-        $this->db->update('customers', $data);
-
+        $this->db->where('id', $this->input->post('id'));        
+        $this->db->update('customers', $data);        
         // Periksa apakah pembaruan berhasil
         return $this->db->affected_rows() > 0;
         // return true;
     }
 
-    // public function redeemVoucher($customerId)
-    // {
-    //     // Your logic to redeem the voucher and update the status to 'Y'
-    //     // You may need to adjust this based on your database structure and requirements
-
-    //     $data = array(
-    //         'status' => 'Y',  // Update the status to 'Y'
-    //         // Add other fields if needed
-    //     );
-
-    //     $this->db->where('id', $customerId);
-    //     $this->db->update('customers', $data);
-
-    //     // Check if the update was successful
-    //     return $this->db->affected_rows() > 0;
-    // }
 
     public function generate_otp($id)
     {

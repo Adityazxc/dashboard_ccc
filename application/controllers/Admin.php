@@ -45,36 +45,25 @@ class Admin extends CI_Controller
         }
 
     }
-
-    public function detailUsers()
-    {        
-        $encodedId = $this->input->get('idUser');     
-        $decodedId = base64_decode($encodedId);
-        $data['title'] = 'Dashboard Admin';
-        $data['page_name'] = 'detail_users';
-        $data['role'] = 'Admin';        
-        $userData = $this->User_model->get_user_details($decodedId);
-        $data['userData'] = $userData;
-        $this->load->view('dashboard', $data);
-    }
+   
 
     public function view_users_logs()
     {
         $list = $this->Admin_model->getdatatables_user();                    
 
         $data = array();
-        $no = @$_POST['start'];
+        $no = $this->input->post('start', true);
         foreach ($list as $item) {
 
             $no++;
             $row = array();
             $row[] = '<small style="font-size:12px">' . $no . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->account_name . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->role . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->ip_address . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->os . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->browser . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->login_time . '</small>';                                
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->account_name) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->role) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->ip_address) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->os) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->browser) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->login_time) . '</small>';                                
             $data[] = $row;
         }
         $output = array(
@@ -90,23 +79,24 @@ class Admin extends CI_Controller
         $list = $this->Admin_model->getdatatables_customer();
 
         $data = array();
-        $no = @$_POST['start'];
+        $no = $this->input->post('start', true);
         foreach ($list as $item) {
 
             $no++;
             $row = array();
             $row[] = '<small style="font-size:12px">' . $no . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->account_name . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->agent_area . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->role . '</small>';
-            $row[] = '<a href="#" onclick="detailUsers(' . $item->id_user . ')">' . $item->account_number . '</a>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->account_name) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->agent_area) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->role) . '</small>';
+            $row[] = '<a href="#" data-toggle="modal" data-target="#ModalEditPassword" onclick="detailUsers(' . htmlspecialchars($item->id_user) .',\''.htmlspecialchars($item->account_name).'\' )">' . htmlspecialchars($item->account_number) . '</a>';
+            // $row[] = '<a href="#" onclick="detailUsers(' . $item->id_user . ')">' . $item->account_number . '</a>';
 
             if ($item->status_account == 1) {
                 $status = 'Online';
                 $row[] = '<small class="badge badge-boxed badge-soft-warning text-success" style="font-size:12px;">' . $status . '</small>';
             } else {
                 $status = 'Offline';
-                $row[] = '<small style="font-size:12px">' . $status . '</small>';
+                $row[] = '<small style="font-size:12px">' . htmlspecialchars($status) . '</small>';
             }
             $data[] = $row;
         }
@@ -121,8 +111,9 @@ class Admin extends CI_Controller
 
     public function reset_password()
     {
-        $customerId = $this->input->post('customerId');
-        $newPassword = $this->input->post('new_password');
+        
+        $customerId = $this->input->post('customerId', TRUE);
+        $newPassword = $this->input->post('new_password', TRUE);
         var_dump($newPassword);
         var_dump($customerId);
         if ($this->User_model->reset_password_model($customerId, $newPassword)) {
@@ -136,10 +127,10 @@ class Admin extends CI_Controller
 
     public function add_user(){        
         $user_data = array(
-            'account_name' => $this->input->post('accountName'),
-            'agent_area' => $this->input->post('agentArea'),
-            'account_number' => $this->input->post('accountId'),
-            'role' => $this->input->post('role'),                                    
+            'account_name' => $this->input->post('accountName', TRUE),
+            'agent_area' => $this->input->post('agentArea', TRUE),
+            'account_number' => $this->input->post('accountId', TRUE),
+            'role' => $this->input->post('role', TRUE),                                    
         );              
         $user_data['password']=md5("123456");
         $user_data["agent_status"] ="Y";
@@ -158,5 +149,17 @@ class Admin extends CI_Controller
         
 
 
+    }
+
+    public function get_csrf()
+    {
+        echo $this->security->get_csrf_hash();
+    }   
+
+    public function get_csrf_json()
+    {
+        $data['status']             = "Success";
+        $data['get_csrf_hash']      = $this->security->get_csrf_hash();
+        echo json_encode($data);
     }
 }

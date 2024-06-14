@@ -152,19 +152,19 @@ class Ccc extends CI_Controller
         $this->session->set_flashdata('success_message', 'Data berhasil ditambahkan.');
 
         $customer_data = array(
-            'customer_name' => $this->input->post('customerName'),
-            'awb_no' => $this->input->post('awb_no'),
-            'email' => $this->input->post('email'),
-            'no_hp' => $this->input->post('no_tlp'),
-            'harga' => $this->input->post('ongkir'),
-            'service' => $this->input->post('service'),
+            'customer_name' => $this->input->post('customerName',TRUE),
+            'awb_no' => $this->input->post('awb_no',TRUE),
+            'email' => $this->input->post('email',TRUE),
+            'no_hp' => $this->input->post('no_tlp',TRUE),
+            'harga' => $this->input->post('ongkir',TRUE),
+            'service' => $this->input->post('service',TRUE),
         );
         // Tambahkan tanggal ke dalam array
         $voucher_code = $this->generateVoucherCode();
         $customer_data['voucher'] = $voucher_code;
         $customer_data['date'] = date('Y-m-d H:i:s');
         // $customer_data['expired_date'] = date('Y-m-d', strtotime('+30 days'));
-        $customer_data['value_voucher'] = $this->input->post('ongkir');
+        $customer_data['value_voucher'] = $this->input->post('ongkir',TRUE);
         $customer_data['status'] = 'N'; // Default status
         $customer_data['status_email'] = 'N';
         $customer_data['type'] = 'customer'; // Default status
@@ -187,17 +187,17 @@ class Ccc extends CI_Controller
         $list = $this->ccc_model->getdatatables_customer();
 
         $data = array();
-        $no = @$_POST['start'];
+        $no = $this->input->post('start', true);
         foreach ($list as $item) {
             $no++;
             $row = array();
             $row[] = '<small style="font-size:12px">' . $no . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->customer_name . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->email . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->no_hp . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->harga . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->awb_no . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->service . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->customer_name) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->email) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->no_hp) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->harga) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->awb_no) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->service) . '</small>';
             $data[] = $row;
         }
         $output = array(
@@ -212,44 +212,49 @@ class Ccc extends CI_Controller
 
     public function summary_customer()
     {
+        $dateFrom= $this->security->xss_clean($this->input->post('dateFrom'));
+        $dateThru= $this->security->xss_clean($this->input->post('dateThru'));
 
+        $this->db->where('status_email', 'Y');
         $this->db->where('type', 'customer');
-        $this->db->where('DATE(date) >=', $this->input->post('dateFrom'));
-        $this->db->where('DATE(date) <=', $this->input->post('dateThru'));
+        $this->db->where('DATE(date) >=',  $dateFrom);
+        $this->db->where('DATE(date) <=', $dateThru);
         $customers_status1 = $this->db->get('customers')->num_rows();
 
         $this->db->where('status', 'Y');
         $this->db->where('type', 'customer');
-        $this->db->where('DATE(date) >=', $this->input->post('dateFrom'));
-        $this->db->where('DATE(date) <=', $this->input->post('dateThru'));
+        $this->db->where('DATE(date) >=',  $dateFrom);
+        $this->db->where('DATE(date) <=', $dateThru);
         $customers_status2 = $this->db->get('customers')->num_rows();
 
         $this->db->where('status', 'N');
+        $this->db->where('status_email', 'Y');
         $this->db->where('type', 'customer');
-        $this->db->where('DATE(date) >=', $this->input->post('dateFrom'));
-        $this->db->where('DATE(date) <=', $this->input->post('dateThru'));
+        $this->db->where('DATE(date) >=',  $dateFrom);
+        $this->db->where('DATE(date) <=', $dateThru);
         $customers_status3 = $this->db->get('customers')->num_rows();
 
-        $this->db->where('status', 'N');
+        $this->db->where('status_email', 'Y');
         $this->db->where('type', 'customer');
-        $this->db->where('DATE(date) >=', $this->input->post('dateFrom'));
-        $this->db->where('expired_date <=', $this->input->post('dateThru'));
+        $this->db->where('expired_date <', date('Y-m-d'));
+        $this->db->where('DATE(date) >=',  $dateFrom);
+        $this->db->where('DATE(date) <=', $dateThru);
         $customers_status4 = $this->db->get('customers')->num_rows();
 
 
         $this->db->select('SUM(harga) as totalharga');
         $this->db->where('status', 'Y');
         $this->db->where('type', 'customer');
-        $this->db->where('DATE(date) >=', $this->input->post('dateFrom'));
-        $this->db->where('DATE(date) <=', $this->input->post('dateThru'));
+        $this->db->where('DATE(date) >=',  $dateFrom);
+        $this->db->where('DATE(date) <=', $dateThru);
         $customers_status5 = $this->db->get('customers')->row();
 
         echo json_encode([
-            'sum_status1' => $customers_status1,
-            'sum_status2' => $customers_status2,
-            'sum_status3' => $customers_status3,
-            'sum_status4' => $customers_status4,
-            'sum_status5' => $customers_status5->totalharga,
+            'sum_status1' => htmlspecialchars($customers_status1),
+            'sum_status2' => htmlspecialchars($customers_status2),
+            'sum_status3' => htmlspecialchars($customers_status3),
+            'sum_status4' => htmlspecialchars($customers_status4),
+            'sum_status5' => htmlspecialchars($customers_status5->totalharga),
         ]);
     }
 
@@ -273,4 +278,15 @@ class Ccc extends CI_Controller
         }
     }
 
+    public function get_csrf()
+    {
+        echo $this->security->get_csrf_hash();
+    }
+
+    public function get_csrf_json()
+    {
+        $data['status']             = "Success";
+        $data['get_csrf_hash']      = $this->security->get_csrf_hash();
+        echo json_encode($data);
+    }
 }

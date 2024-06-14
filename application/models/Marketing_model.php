@@ -81,18 +81,24 @@ class Marketing_model extends CI_Model
     private function _getdatatables_marketing()
     {
         $this->db->select('*');      
-        $this->db->where('type', 'customer');  
+        $this->db->where('type', 'customer'); 
+        $this->db->order_by('date', 'desc'); 
+         
 
         $status = $this->input->post('status');
         $dateFrom = $this->input->post('dateFrom');
         $dateThru = $this->input->post('dateThru');
 
         switch ($status) {
+            case 'status1':
+                $this->db->where('status_email', 'Y');
+                break;
             case 'status2':
                 $this->db->where('status', 'Y');
                 break;
             case 'belumDigunakan':
-                $this->db->where('status', 'N');
+                $this->db->where('status_email', 'Y')
+                ->where('status', 'N');
                 break;
             case 'emailDikirim':
                 $this->db->where('status_email', 'Y');

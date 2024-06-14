@@ -4,8 +4,8 @@ class Finance_model extends CI_Model
 {
 
     // PCRF REGISTRATION
-    var $customer_column_order = array(null, 'id', 'date', 'awb_no', 'customer_name', 'harga', 'email', 'no_hp', 'service', null); //set column field database for datatable orderable
-    var $customer_column_search = array('id', 'date', 'awb_no', 'customer_name', 'harga', 'email', 'no_hp', 'service'); //set column field database for datatable searchable
+    var $customer_column_order = array(null, 'id', 'date', 'awb_no', 'customer_name', 'harga', 'email', 'no_hp', 'service', 'account_name', null); //set column field database for datatable orderable
+    var $customer_column_search = array('id', 'date', 'awb_no', 'customer_name', 'harga', 'email', 'no_hp', 'service', 'account_name'); //set column field database for datatable searchable
     var $customer_order = array('id' => 'DESC'); // default order
 
 
@@ -18,11 +18,22 @@ class Finance_model extends CI_Model
         $this->db->where('customers.type', 'customer');
         $dateFrom = $this->input->post('dateFrom');
         $dateThru = $this->input->post('dateThru');
+        // Logika filter untuk account_name
+        $accountNameFilter = $this->input->post('account_name');
+        if (!empty($accountNameFilter)) {
+            $this->db->like('users.account_name', $accountNameFilter);
+            $this->db->or_like('customers.customer_name', $accountNameFilter);
+            $this->db->or_like('customers.awbno_claim', $accountNameFilter);
+            $this->db->or_like('customers.voucher', $accountNameFilter);
+
+        }
+
         if ($this->input->post('status') == 'status2') {
             $this->db->where('customers.status', 'Y');
         } else if ($this->input->post('status') == 'status3') {
-            $this->db->where('customers.status', 'N');
-        } else if ($this->input->post('status') == 'hangus') {
+            $this->db->where('customers.status_email', 'Y')
+            ->where('customers.status', 'N');
+        } else if ($this->input->post('status') == 'hangus') {            
             $this->db->where('expired_date <', date('Y-m-d'))
                 ->where('DATE(customers.date) >=', $dateFrom)
                 ->where('DATE(customers.date) <=', $dateThru);
@@ -31,7 +42,7 @@ class Finance_model extends CI_Model
         }
 
         $this->db->where('DATE(customers.date) >=', $this->input->post('dateFrom'));
-        $this->db->where('DATE(customers.date) <=', $this->input->post('dateThru'));
+        $this->db->where('DATE(customers.customer_name) <=', $this->input->post('dateThru'));
 
 
         $i = 0;
@@ -56,7 +67,6 @@ class Finance_model extends CI_Model
             $this->db->order_by(key($customer_order), $customer_order[key($customer_order)]);
         }
     }
-
 
     function getdatatables_finance()
     {

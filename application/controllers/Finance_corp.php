@@ -39,20 +39,20 @@ class Finance_corp extends CI_Controller
         $list = $this->Ccc_model_corp->getdatatables_finance();
 
         $data = array();
-        $no = @$_POST['start'];
+        $no = $this->input->post('start', true);
         foreach ($list as $item) {
             $no++;
             $row = array();
             $row[] = '<small style="font-size:12px">' . $no . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->date . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->awb_no . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->id_customer . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->customer_name . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->consignee . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->qty . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->weight . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->harga . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->create_at . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->date) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->awb_no) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->id_customer) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->customer_name) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->consignee) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->qty) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->weight) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->harga) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->create_at) . '</small>';
             $data[] = $row;
         }
         $output = array(
@@ -67,15 +67,17 @@ class Finance_corp extends CI_Controller
     public function summary_customer()
     {
         // Get the date range from the POST data
+        $dateFrom= $this->security->xss_clean($this->input->post('dateFrom'));
+        $dateThru= $this->security->xss_clean($this->input->post('dateThru'));
 
-        $this->db->where('DATE(date) >=', $this->input->post('dateFrom'));
-        $this->db->where('DATE(date) <=', $this->input->post('dateThru'));
+        $this->db->where('DATE(date) >=',  $dateFrom);
+        $this->db->where('DATE(date) <=', $dateThru);
         $customers_status1 = $this->db->count_all_results('corporate');
 
         // Summing up the 'harga' for records within the specified date range
         $this->db->select('SUM(harga) as totalharga');
-        $this->db->where('DATE(date) >=', $this->input->post('dateFrom'));
-        $this->db->where('DATE(date) <=', $this->input->post('dateThru'));
+        $this->db->where('DATE(date) >=',  $dateFrom);
+        $this->db->where('DATE(date) <=', $dateThru);
         $customersTotalHarga = $this->db->get('corporate')->row();
         // Return the total harga as JSON
         echo json_encode([

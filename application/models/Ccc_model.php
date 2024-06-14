@@ -15,16 +15,20 @@ class Ccc_model extends CI_Model
         $this->db->where('type', 'customer');
         $this->db->order_by('date', 'desc');
 
-        $status = $this->input->post('status');
-        $dateFrom = $this->input->post('dateFrom');
-        $dateThru = $this->input->post('dateThru');
+        $status = $this->input->post('status',TRUE);
+        $dateFrom = $this->input->post('dateFrom',TRUE);
+        $dateThru = $this->input->post('dateThru',TRUE);
 
         switch ($status) {
+            case 'status1':
+                $this->db->where('status_email', 'Y');
+                break;
             case 'status2':
                 $this->db->where('status', 'Y');
                 break;
             case 'status3':
-                $this->db->where('status', 'N');
+                $this->db->where('status_email', 'Y')
+                ->where('status', 'N');
                 break;
             case 'emailDikirim':
                 $this->db->where('status_email', 'Y');
@@ -35,8 +39,7 @@ class Ccc_model extends CI_Model
             case 'hangus':
                 $this->db->where('expired_date <', date('Y-m-d'))
                     ->where('DATE(date) >=', $dateFrom)
-                    ->where('DATE(date) <=', $dateThru)
-                    ->where('status ', 'N');
+                    ->where('DATE(date) <=', $dateThru);
                 break;
             case 'status4':
                 // Handle status4 case if needed
@@ -99,8 +102,31 @@ class Ccc_model extends CI_Model
             $this->db->where('status', 'N');
         } else if ($this->input->post('status') == 'status4') {
         }
-        $this->db->where('DATE(date) >=', $this->input->post('dateFrom'));
-        $this->db->where('DATE(date) <=', $this->input->post('dateThru'));
+        $this->db->where('DATE(date) >=', $this->security->xss_clean($this->input->post('dateFrom')));
+        $this->db->where('DATE(date) <=', $this->security->xss_clean($this->input->post('dateThru')));
+        $this->db->from('customers');
+        return $this->db->count_all_results();
+    }
+   
+    function count_filtered_agen()
+    { 
+        $this->_getdatatables_agen();
+        $query = $this->db->get();
+        return $query->num_rows();
+    }
+
+    function count_all_agen()
+    { 
+        $this->db->select('*');
+        $this->db->where('type', 'customer');
+        if ($this->input->post('status') == 'status2') {
+            $this->db->where('status', 'Y');
+        } else if ($this->input->post('status') == 'status3') {
+            $this->db->where('status', 'N');
+        } else if ($this->input->post('status') == 'status4') {
+        }
+        $this->db->where('DATE(date) >=', $this->security->xss_clean($this->input->post('dateFrom')));
+        $this->db->where('DATE(date) <=', $this->security->xss_clean($this->input->post('dateThru')));
         $this->db->from('customers');
         return $this->db->count_all_results();
     }
@@ -131,8 +157,8 @@ class Ccc_model extends CI_Model
             $this->db->where('status', 'N');
         } else if ($this->input->post('status') == 'status4') {
         }
-        $this->db->where('DATE(date) >=', $this->input->post('dateFrom'));
-        $this->db->where('DATE(date) <=', $this->input->post('dateThru'));
+        $this->db->where('DATE(date) >=', $this->security->xss_clean($this->input->post('dateFrom')));
+        $this->db->where('DATE(date) <=', $this->security->xss_clean($this->input->post('dateThru')));
         $this->db->where('id_user', $id_user);
 
 

@@ -9,8 +9,8 @@
         <div class="form-group">
             <input type="text" class="form-control form-control-user" name="search_keyword" id="search_keyword"
                 placeholder="Masukan Kode Voucher" style="border-radius: 1rem;"
-                value="<?= isset($search_keyword) ? $search_keyword : ''; ?>" required>                
-        </div>   
+                value="<?= isset($search_keyword) ? $search_keyword : ''; ?>" required>
+        </div>
         <center>
             <button class="col-md-3 btn btn-primary">Gunakan</button>
             <button class="col-md-3 btn btn-danger" onclick="hapus()">Hapus</button>
@@ -24,7 +24,7 @@
     if (!empty($search_keyword)) {
 
         if (isset($search_result) && !empty($search_result)) {
-            if (date('Y-m-d') <= $search_result[0]->expired_date ) {
+            if (date('Y-m-d') <= $search_result[0]->expired_date) {
                 ?>
 
 
@@ -50,14 +50,15 @@
                     </div>
                 </div>
             <?php } else {
-                echo '<p>Kadaluarsa<p/>';
+                echo '<div class="alert alert-danger" role="alert">';
+                echo '<center>Voucher <strong>' . $search_keyword . '</strong> telah hangus</center>';
+                echo '</div>';
             }
         } else {
             // Tidak ada data ditemukan        
-                // Tidak ada data ditemukan        
-                echo '<div class="alert alert-info" role="alert">';
-                echo '<center><span style="color: red;">Voucher </span>' . $search_keyword . '<span style="color: red;"> tidak Ditemukan atau sudah hangus</span></center>';
-                echo '</div>';
+            echo '<div class="alert alert-info" role="alert">';
+            echo '<center><span style="color: red;">Voucher </span>' . $search_keyword . '<span style="color: red;"> tidak Ditemukan</span></center>';
+            echo '</div>';
         }
     }
     ?>
@@ -68,9 +69,6 @@
     }
 </script>
 
-<link href="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
-<script src="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 <!------ Include the above in your HEAD tag ---------->
 
 <!--Model Popup starts-->

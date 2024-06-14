@@ -56,7 +56,7 @@ class Marketing extends CI_Controller
     }
     public function edit_send_email()
     {
-        $customerId = $this->input->get('customerId');
+        $customerId = $this->input->get('customerId', TRUE);
         $data['title'] = 'Dashboard Marketing';
         $data['page_name'] = 'edit_email';
         $data['role'] = 'Marketing';
@@ -71,7 +71,7 @@ class Marketing extends CI_Controller
         $this->load->model('Customer_model');
 
         // Mendapatkan kata kunci pencarian dari formulir atau input pengguna
-        $keyword = $this->input->post('search_keyword');
+        $keyword = $this->input->post('search_keyword', TRUE);
 
         // Memanggil metode searchCustomer dari model
         $search_result = $this->Customer_model->searchCustomer($keyword);
@@ -104,12 +104,12 @@ class Marketing extends CI_Controller
         $list = $this->Marketing_model->getdatatables_marketing();
 
         $data = array();
-        $no = @$_POST['start'];
+        $no = $this->input->post('start', true);
         foreach ($list as $item) {
             if ($item->status == 'N') {
-                $status = 'Belum Dipakai';
+                $status = 'Belum Digunakan';
             } else {
-                $status = 'Telah dipakai';
+                $status = 'Sudah Digunakan';
             }
             if ($item->status_email == 'Y') {
                 $status_email = 'Sudah terkirim';
@@ -119,16 +119,16 @@ class Marketing extends CI_Controller
             $no++;
             $row = array();
 
-            $row[] = '<small style="font-size:12px">' . $no . '</small>';                      
-            $row[] = '<small style="font-size:12px">' . $item->customer_name . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->email . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->no_hp . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->harga . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->awb_no . '</small>';
-            $row[] = '<small style="font-size:12px">' . $status . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->service . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->voucher . '</small>';
-            $row[] = '<small style="font-size:12px">' . $status_email . '</small>';
+            $row[] = '<small style="font-size:12px">' . $no . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->customer_name) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->email) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->no_hp) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->harga) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->awb_no) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($status) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->service) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->voucher) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($status_email) . '</small>';                     
             $data[] = $row;
         }
         $output = array(
@@ -143,44 +143,47 @@ class Marketing extends CI_Controller
 
     public function summary_customer()
     {
+        $dateFrom = $this->security->xss_clean($this->input->post('dateFrom'));
+        $dateThru = $this->security->xss_clean($this->input->post('dateThru'));
 
         $this->db->where('status_email', 'Y');
         $this->db->where('type', 'customer');
-        $this->db->where('DATE(date) >=', $this->input->post('dateFrom'));
-        $this->db->where('DATE(date) <=', $this->input->post('dateThru'));
+        $this->db->where('DATE(date) >=', $dateFrom);
+        $this->db->where('DATE(date) <=', $dateThru);
         $total_email_dikirim = $this->db->get('customers')->num_rows();
 
         $this->db->where('status_email', 'N');
         $this->db->where('type', 'customer');
-        $this->db->where('DATE(date) >=', $this->input->post('dateFrom'));
-        $this->db->where('DATE(date) <=', $this->input->post('dateThru'));
+        $this->db->where('DATE(date) >=', $dateFrom);
+        $this->db->where('DATE(date) <=', $dateThru);
         $total_belum_dikirim = $this->db->get('customers')->num_rows();
 
         $this->db->where('status', 'N');
+        $this->db->where('status_email', 'Y');
         $this->db->where('type', 'customer');
-        $this->db->where('DATE(date) >=', $this->input->post('dateFrom'));
-        $this->db->where('DATE(date) <=', $this->input->post('dateThru'));
+        $this->db->where('DATE(date) >=', $dateFrom);
+        $this->db->where('DATE(date) <=', $dateThru);
         $customers_status3 = $this->db->get('customers')->num_rows();
 
         $this->db->where('expired_date <', date('Y-m-d'));
         $this->db->where('type', 'customer');
-        $this->db->where('DATE(date) >=', $this->input->post('dateFrom'));
-        $this->db->where('DATE(date) <=', $this->input->post('dateThru'));
+        $this->db->where('DATE(date) >=', $dateFrom);
+        $this->db->where('DATE(date) <=', $dateThru);
         $total_hangus = $this->db->get('customers')->num_rows();
 
         $this->db->select('SUM(harga) as totalharga');
         $this->db->where('status', 'Y');
         $this->db->where('type', 'customer');
-        $this->db->where('DATE(date) >=', $this->input->post('dateFrom'));
-        $this->db->where('DATE(date) <=', $this->input->post('dateThru'));
+        $this->db->where('DATE(date) >=', $dateFrom);
+        $this->db->where('DATE(date) <=', $dateThru);
         $customers_status5 = $this->db->get('customers')->row();
 
         echo json_encode([
-            'sum_email_dikirim' => $total_email_dikirim,
-            'sum_belum_dikirim' => $total_belum_dikirim,
-            'sum_hangus' => $total_hangus,
-            'sum_status3' => $customers_status3,
-            'sum_status5' => $customers_status5->totalharga,
+            'sum_email_dikirim' => htmlspecialchars($total_email_dikirim),
+            'sum_belum_dikirim' => htmlspecialchars($total_belum_dikirim),
+            'sum_hangus' => htmlspecialchars($total_hangus),
+            'sum_status3' => htmlspecialchars($customers_status3),
+            'sum_status5' => htmlspecialchars($customers_status5->totalharga),
         ]);
     }
 
@@ -209,21 +212,21 @@ class Marketing extends CI_Controller
                 $row[] = '<small style="font-size:12px"></small>';
             }
             $row[] = '<small style="font-size:12px">' . $no . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->customer_name . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->customer_name) . '</small>';
             if ($item->email == null) {
-                $row[] = '<button type="button" class="btn btn-sm btn-info" onclick="editEmail(' . $item->id . ', \'' . $item->email . '\')">Edit</button>';
+                $row[] = '<button type="button" class="btn btn-sm btn-info" onclick="editEmail(' . htmlspecialchars($item->id) . ', \'' . htmlspecialchars($item->email) . '\')">Edit</button>';
 
                 // $row[] = '<a href="#ModalEditEmail" class="btn btn-sm btn-info" data-toggle="modal" data-id="' . $item->id . '" data-placement="top" data-toggle="tooltip" data-placement="top" title="Edit">Edit</a>';
             } else {
-                $row[] = '<small style="font-size:12px">' . $item->email . '</small>';
+                $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->email) . '</small>';
             }
-            $row[] = '<small style="font-size:12px">' . $item->no_hp . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->harga . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->awb_no . '</small>';
-            $row[] = '<small style="font-size:12px">' . $status . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->service . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->voucher . '</small>';
-            $row[] = '<small style="font-size:12px">' . $status_email . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->no_hp) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->harga) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->awb_no) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($status) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->service) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->voucher) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($status_email) . '</small>';
             $data[] = $row;
         }
         $output = array(
@@ -236,9 +239,9 @@ class Marketing extends CI_Controller
     }
     public function send_emails()
     {
-        $selectedEmails = $this->input->post('selectedEmails');
-        $customerName = $this->input->post('customerName'); // Get the customer's name
-        $voucherInfo = $this->input->post('voucherInfo');
+        $selectedEmails = $this->input->post('selectedEmails', TRUE);
+        $customerName = $this->input->post('customerName', TRUE); // Get the customer's name
+        $voucherInfo = $this->input->post('voucherInfo', TRUE);
 
         if (!empty($selectedEmails)) {
             foreach ($selectedEmails as $email) {
@@ -372,8 +375,8 @@ class Marketing extends CI_Controller
         $conn = [
             'protocol' => 'smtp',
             'smtp_host' => 'smtp.office365.com',
-            'smtp_user' => 'bdo.itproject@jne.co.id',
-            'smtp_pass' => 'D3stroy3r',
+            'smtp_user' => 'bdo.promo@jne.co.id',
+            'smtp_pass' => 'prob0220',
             'smtp_port' => '587',
             'smtp_crypto' => 'tls',
             'mailtype' => 'html',
@@ -383,7 +386,7 @@ class Marketing extends CI_Controller
         ];
 
         $this->load->library('email', $conn);
-        $this->email->from('bdo.itproject@jne.co.id', 'JNE BANDUNG');
+        $this->email->from('bdo.promo@jne.co.id', 'JNE BANDUNG');
         $this->email->to($recipientEmail);
         $this->email->subject('Selamat Anda mendapatkan E-Voucher Ongkir dari JNE Bandung');
         $this->email->message($output);
@@ -400,12 +403,17 @@ class Marketing extends CI_Controller
 
     public function test_checkbox()
     {
-        for ($i = 0; $i < count($this->input->post('id_customer')); $i++) {
-            $customer_id = $this->input->post('id_customer')[$i];
-
-            $customers = $this->db->get_where('customers', ['id' => $this->input->post('id_customer')[$i]]);
+        for ($i = 0; $i < count($this->input->post('id_customer', TRUE)); $i++) {
+            $customer_id = $this->input->post('id_customer', TRUE)[$i];
+            $customers = $this->db->get_where('customers', ['id' => $this->input->post('id_customer', TRUE)[$i]]);
+            $user_create=$this->session->userdata('id_user');
 
             $data['email'] = $customers->row()->email;
+
+            $updateData=[
+                'status_email'=>'Y',
+                'date_send_email'=>date('Y-m-d H:i:s')
+            ];
             //manggil yg function email
             $this->db->where('id', $customer_id);
             $this->db->update('customers', ['status_email' => 'Y']);
@@ -415,10 +423,12 @@ class Marketing extends CI_Controller
 
             // Tambahkan 30 hari ke tanggal saat ini
             $newExpiredDate = date('Y-m-d', strtotime('+30 days'));
+            $updateData['expired_date'] = $newExpiredDate;
+            $updateData['id_send_email'] = $user_create;
 
             // Set kolom expired_date dengan nilai baru
             $this->db->where('id', $customer_id);
-            $this->db->update('customers', ['expired_date' => $newExpiredDate]);
+            $this->db->update('customers', $updateData);
             $expired = strftime('%e %B %Y', strtotime($newExpiredDate));
 
             $this->kirim_email($customers->row()->email, $customers->row()->customer_name, $customers->row()->voucher, $harga_voucher, $resi, $expired);

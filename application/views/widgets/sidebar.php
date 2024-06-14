@@ -206,6 +206,13 @@
                 <span>Send Email</span>
             </a>
         </li>
+        <li
+            class="nav-item <?php echo ($this->uri->segment(1) == 'cs' && $this->uri->segment(2) == 'report') ? 'link_active' : ''; ?>">
+            <a class="nav-link" href="<?php echo base_url('cs/report'); ?>">
+                <i class="bi bi-flag"></i>
+                <span>Report</span>
+            </a>
+        </li>
         <!-- Redeem Voucher Link -->
     <?php endif; ?>
 
@@ -300,6 +307,10 @@
                     <a class="collapse-item" href="<?php echo base_url('cs/send_email'); ?>">
                         <i class="bi bi-send"></i>
                         <span>Send Email</span>
+                    </a>
+                    <a class="collapse-item" href="<?php echo base_url('cs/report'); ?>">
+                        <i class="bi bi-flag"></i>
+                        <span>Report</span>
                     </a>
                 </div>
             </div>

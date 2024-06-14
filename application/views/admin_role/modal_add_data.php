@@ -14,7 +14,8 @@
                     <div class="form-group">
                         <label for="Marketing">Account Name:</label>
                         <input type="text" class="form-control" id="accountName"
-                            oninput="this.value = this.value.toUpperCase()" name="accountName" required>
+                            oninput="this.value = this.value.toUpperCase()" name="accountName" autocomplete="off"
+                            required>
                     </div>
                     <!-- <input type="hidden" class="form-control" name="password" id="password" value="123456"> -->
                     <div class="form-group">
@@ -32,13 +33,18 @@
                     <div class="form-group">
                         <label for="agentArea">Agent Area:</label>
                         <input type="text" class="form-control" id="agentArea"
-                            oninput="this.value = this.value.toUpperCase()" name="agentArea" required>
+                            oninput="this.value = this.value.toUpperCase()" name="agentArea" autocomplete="off"
+                            required>
                     </div>
                     <div class="form-group">
                         <label for="accountId">Account Id/Username</label>
-                        <input type="text" class="form-control" id="accountId" name="accountId" required>
-                    </div>                 
+                        <input type="text" class="form-control" id="accountId" name="accountId" autocomplete="off"
+                            required>
+                    </div>
 
+                    <input type="hidden" id="ModaladdCustomerModal_csrf"
+                        name="<?= $this->security->get_csrf_token_name() ?>"
+                        value="<?= $this->security->get_csrf_hash() ?>" />
                     <!-- Add more form fields as needed -->
                     <button type="submit" class="btn btn-primary">Add</button>
             </form>
@@ -61,14 +67,14 @@
                 // Enable the Agent Area field for other roles
                 agentAreaField.prop("disabled", true);
             }
-        }   
+        }
 
         // Initial state on page load
-        toggleAgentArea();        
+        toggleAgentArea();
 
         // Bind the function to the change event of the Role dropdown
         $("#role").change(function () {
-            toggleAgentArea();            
+            toggleAgentArea();
         });
     });
 </script>

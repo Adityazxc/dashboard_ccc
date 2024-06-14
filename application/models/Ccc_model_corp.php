@@ -13,8 +13,8 @@ class Ccc_model_corp extends CI_Model
     private function _getdatatables_customer()
 {
     $this->db->select('*');            
-    $dateFrom = $this->input->post('dateFrom');
-    $dateThru = $this->input->post('dateThru');
+    $dateFrom= $this->security->xss_clean($this->input->post('dateFrom'));
+    $dateThru= $this->security->xss_clean($this->input->post('dateThru'));
         
     $this->db->where('DATE(date) >=', $dateFrom)
              ->where('DATE(date) <=', $dateThru);
@@ -65,8 +65,8 @@ class Ccc_model_corp extends CI_Model
     function count_all_customer()
     {
         $this->db->select('*');               
-        $this->db->where('DATE(date) >=', $this->input->post('dateFrom'));
-        $this->db->where('DATE(date) <=', $this->input->post('dateThru'));
+        $this->db->where('DATE(date) >=', $this->security->xss_clean($this->input->post('dateFrom')));
+        $this->db->where('DATE(date) <=', $this->security->xss_clean($this->input->post('dateThru')));
         $this->db->from('corporate');
         return $this->db->count_all_results();
     }
@@ -90,8 +90,8 @@ class Ccc_model_corp extends CI_Model
     {
         $id_user = $this->session->userdata('id_user');
         $this->db->select('*');      
-        $this->db->where('DATE(date) >=', $this->input->post('dateFrom'));
-        $this->db->where('DATE(date) <=', $this->input->post('dateThru'));
+        $this->db->where('DATE(date) >=', $this->security->xss_clean($this->input->post('dateFrom')));
+        $this->db->where('DATE(date) <=', $this->security->xss_clean($this->input->post('dateThru')));
         $this->db->where('id_user', $id_user);
 
 
@@ -134,10 +134,10 @@ class Ccc_model_corp extends CI_Model
     {
         $this->db->select('*');
         $this->db->from('corporate');     
-        $this->db->order_by('date', 'desc');                  
+        $this->db->order_by('date', 'desc');                     
 
-        $this->db->where('DATE(date) >=', $this->input->post('dateFrom'));
-        $this->db->where('DATE(date) <=', $this->input->post('dateThru'));
+        $this->db->where('DATE(date) >=', $this->security->xss_clean($this->input->post('dateFrom')));
+        $this->db->where('DATE(date) <=', $this->security->xss_clean($this->input->post('dateThru')));
 
 
         $i = 0;
@@ -176,10 +176,10 @@ class Ccc_model_corp extends CI_Model
     {
         $this->db->select('*');              
         
-        $status = $this->input->post('status');
-        $dateFrom = $this->input->post('dateFrom');
-        $dateThru = $this->input->post('dateThru');               
-        
+        $status = $this->input->post('status');                  
+        $dateFrom= $this->security->xss_clean($this->input->post('dateFrom'));
+        $dateThru= $this->security->xss_clean($this->input->post('dateThru'));
+
         $this->db->where('DATE(date) >=', $dateFrom)
                  ->where('DATE(date) <=', $dateThru);
         

@@ -140,7 +140,7 @@
                         <th>Status</th>
                         <th>Service</th>
                         <th>E-Voucher</th>
-                        <th>Status Email</th>
+                        <th>Status Email</th>                        
                     </tr>
                 </thead>
                 <tbody>
@@ -159,7 +159,7 @@
             dateFrom: $('[name="dateFrom"]').val(),
             dateThru: $('[name="dateThru"]').val(),
         };
-
+        formData['<?= $this->security->get_csrf_token_name() ?>'] = get_csrf();
         // BOX 1 
         $('.totalEmailDikirim').text('Tunggu.');
         $('.totalBelumDikirim').text('Tunggu.');
@@ -217,6 +217,7 @@
                     data.status = $('[name="status"]').val();
                     data.dateFrom = $('[name="dateFrom"]').val();
                     data.dateThru = $('[name="dateThru"]').val();
+                    data.<?= $this->security->get_csrf_token_name() ?> = get_csrf();
                 }
             },
             "columnDefs": [{

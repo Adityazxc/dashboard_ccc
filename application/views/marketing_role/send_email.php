@@ -7,10 +7,7 @@
         <div class="form-group col-md-5">
             <label for="dateThru">Thru:</label>
             <input type="date" class="form-control" id="dateThru" name="dateThru" value="<?= date('Y-m-d') ?>">
-        </div>
-        <!-- <div class="form-group col-md-2">                
-                <button type="button" class="btn btn-primary" onclick="filterData()">Filter</button>
-            </div> -->
+        </div>       
     </div>
 </form>
 
@@ -29,40 +26,42 @@
         <input type="hidden" name="status" id="status" value="">
         <!-- Tambahkan ini di atas tabel -->
 
-        <form action="<?= base_url('marketing/test_checkbox')?>" method="POST">
-        <div class="mb-3">
-            <button type="submit" class="btn btn-primary" id="getSelectedEmails" data-email="example@email.com">
-            <i class="bi bi-send"></i> Kirim Email</button>
-        </div>
-        <div class="table-responsive">
-            <table id="voucher" class="table table-bordered" width="100%" cellspacing="0">
-                <thead>
-                    <tr>
-                        <th>
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" id="selectAll">
-                                <label class="form-check-label" for="selectAll"></label>
-                            </div>
-                        </th>
-                        <th>No</th>
-                        <th>Shipper Name</th>
-                        <th>Email</th>
-                        <th>Phone Number</th>
-                        <th>Amount</th>
-                        <th>AWB No</th>
-                        <th>Status</th>
-                        <th>Service</th>
-                        <th>E-Voucher</th>
-                        <th>Status Email</th>
-                    </tr>
-                </thead>
-                <tbody>
+        <form id="send_email_csrf" action="<?= base_url('marketing/test_checkbox') ?>" method="POST">
+            <div class="mb-3">
+            <input type="hidden" id="Import_csrf" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>" />
 
-                </tbody>
-            </table>
+                <button type="submit" class="btn btn-primary" id="getSelectedEmails" data-email="example@email.com">
+                    <i class="bi bi-send"></i> Kirim Email</button>
+            </div>
+            <div class="table-responsive">
+                <table id="voucher" class="table table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="selectAll">
+                                    <label class="form-check-label" for="selectAll"></label>
+                                </div>
+                            </th>
+                            <th>No</th>
+                            <th>Shipper Name</th>
+                            <th>Email</th>
+                            <th>Phone Number</th>
+                            <th>Amount</th>
+                            <th>AWB No</th>
+                            <th>Status</th>
+                            <th>Service</th>
+                            <th>E-Voucher</th>
+                            <th>Status Email</th>
+                        </tr>
+                    </thead>
+                    <tbody>
 
-        </div>
-        
+                    </tbody>
+                </table>
+
+            </div>
+
         </form>
     </div>
 </div>
@@ -84,6 +83,7 @@
                     data.status = $('[name="status"]').val();
                     data.dateFrom = $('[name="dateFrom"]').val();
                     data.dateThru = $('[name="dateThru"]').val();
+                    data.<?= $this->security->get_csrf_token_name() ?> = get_csrf();
                 }
             },
             "columnDefs": [{
@@ -114,12 +114,21 @@
             $('#selectAll').prop('checked', false);
         });
         // end checkbox
+        function updateCsrfToken() {
+        $.getJSON('admin/get_csrf_json', function (res) {
+            if (res.status == "Success") {
+                $('[id="ModaladdCustomerModal_csrf"]').val(res.get_csrf_hash);
+            }
+        });
+    }
 
         $(document).on('click', '#getSelectedEmails', function () {
             var selectedEmails = getSelectedEmails();
 
             if (selectedEmails.length > 0) {
                 sendEmails(selectedEmails);
+                updateCsrfToken();
+                $("form#filterForm").submit();
             } else {
                 alert('Tidak ada email yang dipilih.');
             }
@@ -138,60 +147,17 @@
 
         // end datefrom and date thru
 
+
     });
-</script>
 
-<script>
- function editEmail(id) {
-    // Fetch the ID and name of the selected customer
-    var customerId = id;
 
-    console.log(customerId);
-    // Redirect to the edit_email_page with customerId as a query parameter
-    window.location.href = "<?= base_url('marketing/edit_send_email') ?>?customerId=" + customerId;
-}
-
-</script>
-
-<!-- Modal -->
-<div class="modal fade" id="ModalEditEmail" tabindex="-1" role="dialog" aria-labelledby="Modal" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="ModalLabel">Edit</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <form action="<?= base_url('ccc') ?>" method="POST" enctype="multipart/form-data">
-                <div class="modal-body">
-                    <div class="ModaleditForm row"></div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary col-md-3" data-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary col-md-3">Simpan</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-<script type="text/javascript">
-    $(document).ready(function() {
-        $('#ModalEditEmail').on('show.bs.modal', function(e) {
-            var id = $(e.relatedTarget).data('id');
-            //menggunakan fungsi ajax untuk pengambilan data
-            $.ajax({
-                type: 'post',
-                url: '<?= base_url('ccc/modaledit') ?>',
-                data: {
-                    id: id,
-                },
-                success: function(data) {
-                    $('.ModaleditForm').html(data); //menampilkan data ke dalam modal
+    $(document).ready(function () {
+        $("#send_email_csrf").click(function () {
+            $.getJSON('<?= base_url('admin/get_csrf_json') ?>', function (res) {
+                if (res.status == "Success") {
+                    $('[id="Import_csrf"]').val(res.get_csrf_hash);
                 }
             });
-        });
-
+        });        
     });
 </script>
-

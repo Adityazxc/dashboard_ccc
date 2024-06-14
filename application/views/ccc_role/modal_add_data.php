@@ -12,36 +12,39 @@
                 enctype="multipart/form-data" role="form">
                 <div class="modal-body">
                     <div class="form-group">
-                        <label for="customerName">Name Pengirim:</label>
+                        <label for="customerName">Nama Pengirim:</label>
                         <input type="text" class="form-control" id="customerName"
-                            oninput="this.value = this.value.toUpperCase()" name="customerName" required>
+                            oninput="this.value = this.value.toUpperCase()" name="customerName" autocomplete="off" required>
                     </div>
                     <div class="form-group">
                         <label for="awb_no">No Awb:</label>
-                        <input type="text" maxlength="16" class="form-control" pattern="[A-Za-z0-9]{16}" id="awb_no"
-                            title="Please enter a 16-character alphanumeric code" name="awb_no" required>
+                        <input type="text" maxlength="16" class="form-control" pattern="[A-Za-z0-9-]{16}" id="awb_no"
+                            title="Please enter a 16-character alphanumeric code" name="awb_no" autocomplete="off" required>
 
                     </div>
                     <div class="form-group">
                         <label for="email">Email:</label>
-                        <input type="email" class="form-control" id="email" name="email" required>
+                        <input type="email" class="form-control" id="email" name="email" autocomplete="off" required>
                     </div>
                     <div class="form-group">
                         <label for="no_tlp">No Telepon</label>
-                        <input type="number" class="form-control" id="no_tlp" name="no_tlp" required>
+                        <input type="number" class="form-control" id="no_tlp" name="no_tlp" autocomplete="off" required>
                     </div>
                     <div class="form-group">
                         <label for="ongkir">Harga Ongkir</label>
-                        <input type="number" class="form-control" id="ongkir" name="ongkir" required>
+                        <input type="number" class="form-control" id="ongkir" name="ongkir" autocomplete="off" required>
                     </div>
                     <div class="form-group">
                         <label for="service">Service</label>
-                        <select class="form-control" id="service" name="service" required>
+                        <select class="form-control" id="service" name="service" autocomplete="off" required>
                             <option value="CTC">CTC</option>
                             <option value="CTC YES">CTC YES</option>
                         </select>
                     </div>
-
+                    
+                    <input type="hidden" id="ModaladdCustomerModal_csrf"
+                        name="<?= $this->security->get_csrf_token_name() ?>"
+                        value="<?= $this->security->get_csrf_hash() ?>" />
 
                     <!-- Add more form fields as needed -->
                     <button type="submit" class="btn btn-primary">
@@ -55,31 +58,3 @@
 </div>
 
 
-
-<!-- format rupiah -->
-<!-- <script type="text/javascript">
-var rupiah = document.getElementById('ongkir');
-rupiah.addEventListener('keyup', function(e) {
-    // tambahkan 'Rp.' pada saat form di ketik
-    // gunakan fungsi formatRupiah() untuk mengubah angka yang di ketik menjadi format angka
-    rupiah.value = formatRupiah(this.value, 'Rp. ');
-});
-
-/* Fungsi formatRupiah */
-function formatRupiah(angka, prefix) {
-    var number_string = angka.replace(/[^,\d]/g, '').toString(),
-        split = number_string.split(','),
-        sisa = split[0].length % 3,
-        rupiah = split[0].substr(0, sisa),
-        ribuan = split[0].substr(sisa).match(/\d{3}/gi);
-
-    // tambahkan titik jika yang di input sudah menjadi angka ribuan
-    if (ribuan) {
-        separator = sisa ? '.' : '';
-        rupiah += separator + ribuan.join('.');
-    }
-
-    rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
-    return prefix == undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : '');
-}
-</script>  -->

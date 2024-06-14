@@ -14,8 +14,9 @@
     <div class="card-body">
         <div class="row">
             <div class="col-md-5 mb-2">
-                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addCustomerModal">
-                  <i class="bi bi-plus-lg"></i> Add User
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addCustomerModal"
+                    id="modal_csrf_token">
+                    <i class="bi bi-plus-lg"></i> Add User
                 </button>
             </div>
         </div>
@@ -46,6 +47,12 @@
 
 
 <script type="text/javascript">
+    function get_csrf() {
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.open("GET", 'admin/get_csrf', false);
+        xmlHttp.send(null);
+        return xmlHttp.responseText;
+    }
     var table;
     $(document).ready(function () {
         //datatables
@@ -55,6 +62,9 @@
             "ajax": {
                 "url": "<?= base_url('admin/view_users') ?>",
                 "type": "POST",
+                "data": function (data) {
+                    data.<?= $this->security->get_csrf_token_name() ?> = get_csrf;
+                }
             }, "columnDefs": [{
                 "targets": [0, 2, 3, 4, 5],
                 "orderable": false
@@ -66,26 +76,65 @@
             ],
         });
 
-        setInterval(function(){
+        setInterval(function () {
             $('#voucher').DataTable().ajax.reload();
-    
-        },180000);
+
+        }, 180000);
     });
-    function detailUsers(id) {
-        var encryptedId = encryptFunction(id);
 
-        console.log(encryptedId);
-        var url = "<?= base_url('admin/detailUsers') ?>?idUser=" + encryptedId;
-        window.location.href = url;
-    }
 
-    // Your encryption function (implemented on the server side)
-    function encryptFunction(value) {
+    $(document).ready(function () {
+        $("#modal_csrf_token").click(function () {
+            $.getJSON('admin/get_csrf_json',
+                function (res) {
+                    if (res.status == "Success") {
+                        $('[id="ModaladdCustomerModal_csrf"]').val(res.get_csrf_hash);
+                    }
+                })
+        });
+    });
 
-        var encodedValue = btoa(value); // Base64 encoding
-
-        return encodedValue;
-    }
-    
 
 </script>
+
+<script>
+    function detailUsers(id, username) {
+        $('#message-warning').text('Apakah anda yakin akan reset password ' + username + ' ?');
+        $('#customerId').val(id);
+        $('#newPasswordInput').val('123456');
+        $('[id="ModalEditPassword_csrf"]').val(get_csrf);
+
+    }
+
+
+</script>
+
+<!-- Modal -->
+<div class="modal fade" id="ModalEditPassword" tabindex="-1" role="dialog" aria-labelledby="Modal" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ModalLabel">Reset password</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="<?= base_url('admin/reset_password') ?>" method="POST" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <p id="message-warning"></p>
+                    <input type="hidden" class="form-control" name="customerId" id="customerId" autocomplete="off">
+                    <input type="hidden" name="new_password" id="newPasswordInput" style="display: none;"
+                        autocomplete="off" required>
+                </div>
+
+
+                <input type="hidden" id="ModalEditPassword_csrf" name="<?= $this->security->get_csrf_token_name() ?>"
+                    value="<?= $this->security->get_csrf_hash() ?>" />
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary col-md-3">Reset</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

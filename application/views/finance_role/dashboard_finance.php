@@ -1,12 +1,16 @@
 <form id="filterForm">
     <div class="form-row">
-        <div class="form-group col-md-5">
+        <div class="form-group col-md-4">
             <label for="dateFrom">From:</label>
             <input type="date" class="form-control" id="dateFrom" name="dateFrom" value="<?= date('Y-m-d') ?>">
         </div>
-        <div class="form-group col-md-5">
+        <div class="form-group col-md-4">
             <label for="dateThru">Thru:</label>
             <input type="date" class="form-control" id="dateThru" name="dateThru" value="<?= date('Y-m-d') ?>">
+        </div>
+        <div class="form-group col-md-4">
+            <label for="account_name">Filter Agen:</label>
+            <input type="text" class="form-control" id="account_name" name="account_name" placeholder="Filter by Agen">
         </div>
     </div>
 </form>
@@ -44,7 +48,7 @@
                         <div class="row no-gutters align-items-center">
                             <div class="col-auto">
                                 <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800 totalstatus3"></div>
-                            </div>                           
+                            </div>
                         </div>
                     </div>
                     <button class="btn btn-default btn-icon" onclick="btnstatus2()">
@@ -115,7 +119,7 @@
                         <th>No</th>
                         <th>Date</th>
                         <th>E-Voucher</th>
-                        <th>AWB no</th>
+                        <th>AWB Claim</th>
                         <th>Nominal E-Voucher</th>
                         <th>Account ID</th>
                         <th>Account Name</th>
@@ -138,8 +142,10 @@
             status: $('#status').val(),
             dateFrom: $('[name="dateFrom"]').val(),
             dateThru: $('[name="dateThru"]').val(),
+            account_name : $('[name="account_name"]').val(),
         };
-
+        formData['<?= $this->security->get_csrf_token_name() ?>'] = get_csrf();
+        console.log(formData); 
         // BOX 1 
         $('.totalstatus1').text('Tunggu.');
         $('.totalstatus2').text('Tunggu.');
@@ -158,7 +164,6 @@
                 $('.totalstatus3').text(r.sum_status3);
                 $('.totalstatus4').text(r.sum_status4);
                 $('.totalPengeluaran').text(formatRupiah(r.sum_status5));
-
 
 
             }
@@ -190,6 +195,7 @@
         table = $('#voucher').DataTable({
             "processing": true,
             "serverSide": true,
+            "searching":false,
             "ajax": {
                 "url": "<?= base_url('finance/getdatatables_customer') ?>",
                 "type": "POST",
@@ -197,6 +203,8 @@
                     data.status = $('[name="status"]').val();
                     data.dateFrom = $('[name="dateFrom"]').val();
                     data.dateThru = $('[name="dateThru"]').val();
+                    data.account_name = $('[name="account_name"]').val();
+                    data.<?= $this->security->get_csrf_token_name() ?> = get_csrf();
                 }
             },
             "columnDefs": [{
@@ -217,6 +225,10 @@
                 'copy', 'csv', 'excel', 'pdf', 'print'
             ]
         }).container().appendTo($('.dataTables_length:eq(0)', table.table().container()));
+        jumlah();
+    });
+    $('[name="account_name"]').on('keyup', function () {
+        table.ajax.reload();
         jumlah();
     });
     $('[name="dateFrom"]').on('change', (e) => {

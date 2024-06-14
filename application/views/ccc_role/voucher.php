@@ -119,8 +119,6 @@
     </div>
 </div>
 
-<script src="<?= base_url() ?>public/vendor/jquery/jquery.min.js"></script>
-
 
 <script>
     var jumlah = () => {

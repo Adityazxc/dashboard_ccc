@@ -27,8 +27,8 @@ class Auth extends CI_Controller
 
     public function login()
     {
-        $username = $this->input->post('username');
-        $password = $this->input->post('password');
+        $username = $this->input->post('username',TRUE);
+        $password = $this->input->post('password',TRUE);
         // Load the user_agent library
         $this->load->library('user_agent');
 

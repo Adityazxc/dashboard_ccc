@@ -65,7 +65,7 @@
                         <div class="row no-gutters align-items-center">
                             <div class="col-auto">
                                 <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800 totalstatus3"></div>
-                            </div>                          
+                            </div>
                         </div>
                     </div>
                     <button class="btn btn-default btn-icon" onclick="btnstatus3()">
@@ -136,8 +136,8 @@
                         <th>Email</th>
                         <th>Phone Number</th>
                         <th>Amount</th>
-                        <th>AWB No</th>                        
-                        <th>Service</th>                        
+                        <th>AWB No</th>
+                        <th>Service</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -151,13 +151,20 @@
 <script src="<?= base_url() ?>public/vendor/jquery/jquery.min.js"></script>
 
 <script>
+    function get_csrf() {
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.open("GET", '<?= base_url('ccc/get_csrf') ?>', false);
+        xmlHttp.send(null);
+        return xmlHttp.responseText;
+    }
     var jumlah = () => {
         var formData = {
             status: $('#status').val(),
             dateFrom: $('[name="dateFrom"]').val(),
             dateThru: $('[name="dateThru"]').val(),
-        };
 
+        };
+        formData['<?= $this->security->get_csrf_token_name() ?>'] = get_csrf();
         // BOX 1 
         $('.totalstatus1').text('Tunggu.');
         $('.totalstatus2').text('Tunggu.');
@@ -214,6 +221,7 @@
                     data.status = $('[name="status"]').val();
                     data.dateFrom = $('[name="dateFrom"]').val();
                     data.dateThru = $('[name="dateThru"]').val();
+                    data.<?= $this->security->get_csrf_token_name() ?> = get_csrf();
                 }
             },
             "columnDefs": [{

@@ -36,7 +36,8 @@ if ($this->session->flashdata('error_message')) {
                 <div class="card-subtitile">Details and history</div>
             </div>
             <div class="me-4">
-                <button type="button" class="btn btn-success" onclick="downloadTemplate()"><i class="bi bi-download"></i>Download Template</button>
+                <button type="button" class="btn btn-success" onclick="downloadTemplate()"><i
+                        class="bi bi-download"></i> Download Template</button>
             </div>
 
         </div>
@@ -44,18 +45,18 @@ if ($this->session->flashdata('error_message')) {
     <div class="card-body p-4">
         <input type="hidden" name="status" id="status" value="">
         <!-- Tambahkan ini di atas tabel -->
-        <form action="<?php echo base_url('ccc_corp/importData'); ?>" method="post" enctype="multipart/form-data">
+        <form id="upload_data" action="<?php echo base_url('ccc_corp/importData'); ?>" method="post" enctype="multipart/form-data">
             <div class="row">
                 <div class="col-md-5 mb-2">
-                    <!-- <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addCustomerModal">
-                        Add Customer
-                    </button> -->
+                    
                 </div>
                 <div class="col-md-3 mb-2">
                     <input type="file" class="form-control" name="excel_file" id="excel_file" required>
                 </div>
-                <div class="col-md-4 mb-2">
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-file-import"></i> Import Data</button>
+                <input type="hidden"  id="Import_csrf" name="<?=$this->security->get_csrf_token_name()?>" value="<?=$this->security->get_csrf_hash()?>" />
+                <div class="col-md-4 mb-2">                    
+                    <button type="submit" id="importDataBtn" class="btn btn-primary"><i class="fas fa-file-import"> </i> Import
+                        Data</button>
                 </div>
             </div>
         </form>
@@ -83,7 +84,6 @@ if ($this->session->flashdata('error_message')) {
         </div>
     </div>
 </div>
-
 <script src="<?= base_url() ?>public/vendor/jquery/jquery.min.js"></script>
 
 <script type="text/javascript">
@@ -105,6 +105,7 @@ if ($this->session->flashdata('error_message')) {
                     data.status = $('[name="status"]').val();
                     data.dateFrom = $('[name="dateFrom"]').val();
                     data.dateThru = $('[name="dateThru"]').val();
+                    data.<?= $this->security->get_csrf_token_name() ?> = get_csrf();
 
                 }
             },
@@ -135,5 +136,15 @@ if ($this->session->flashdata('error_message')) {
 
     });
 
+
+    $(document).ready(function () {
+        $("#upload_data").click(function () {
+            $.getJSON('<?= base_url('admin/get_csrf_json') ?>', function (res) {
+                if (res.status == "Success") {
+                    $('[id="Import_csrf"]').val(res.get_csrf_hash);
+                }
+            });
+        });        
+    });
 
 </script>

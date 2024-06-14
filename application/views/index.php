@@ -18,8 +18,7 @@
         href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
         rel="stylesheet">
     <link rel="icon" href="<?= base_url('public/img/voucher.png') ?>" type="image/png">
-    
-    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+        
 
 </head>
 <?php
@@ -60,12 +59,12 @@ if ($this->session->flashdata('error_message')) {
                                         <div class="form-group">
                                             <input type="text" class="form-control form-control-user" id="username"
                                                 name="username" aria-describedby="emailHelp"
-                                                placeholder="Enter Username" required>
+                                                placeholder="Enter Username" autocomplete="off" required>
                                         </div>
                                         <div class="form-group">
                                             <div class="input-group">
                                                 <input type="password" class="form-control form-control-user"
-                                                    id="password" name="password" placeholder="Password" required>
+                                                    id="password" name="password" placeholder="Password" autocomplete="off" required>
                                                 <div class="input-group-append">
                                                     <button class="btn btn-outline-secondary" type="button"
                                                         id="togglePassword">
@@ -75,6 +74,7 @@ if ($this->session->flashdata('error_message')) {
                                             </div>
                                         </div>
 
+                                        <input type="hidden" name="<?=$this->security->get_csrf_token_name()?>" value="<?=$this->security->get_csrf_hash()?>" />
 
                                         <hr>
                                         <button type="submit" class="btn btn-primary btn-user btn-block">

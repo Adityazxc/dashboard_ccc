@@ -170,15 +170,15 @@ class Ccc_corp extends CI_Controller
             $no++;
             $row = array();
             $row[] = '<small style="font-size:12px">' . $no . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->date . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->customer_name . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->email . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->no_hp . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->harga . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->awb_no . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->service . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->voucher . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->create_at . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->date) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->customer_name) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->email) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->no_hp) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->harga) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->awb_no) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->service) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->voucher) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->create_at) . '</small>';
             $data[] = $row;
         }
         $output = array(

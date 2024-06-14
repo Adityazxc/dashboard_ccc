@@ -39,19 +39,19 @@ class Finance extends CI_Controller
         $list = $this->Finance_model->getdatatables_finance();
 
         $data = array();
-        $no = @$_POST['start'];
+        $no = $this->input->post('start', true);
         foreach ($list as $item) {
 
             $no++;
             $row = array();
             $row[] = '<small style="font-size:12px">' . $no . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->date . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->voucher . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->awbno_claim . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->harga . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->account_number . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->account_name . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->customer_name . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->date) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->voucher) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->awbno_claim) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->harga) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->account_number) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->account_name) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->customer_name) . '</small>';
             $data[] = $row;
         }
         $output = array(
@@ -63,53 +63,40 @@ class Finance extends CI_Controller
         // output to json format
         echo json_encode($output);
     }
+
     public function summary_customer()
     {
-        // Counting all records
-        $this->db->where('type', 'customer');
-        $this->db->where('DATE(customers.date) >=', $this->input->post('dateFrom'));
-        $this->db->where('DATE(customers.date) <=', $this->input->post('dateThru'));
-        $customers_status1 = $this->db->count_all_results('customers');
+        $this->db->select('COUNT(*) as num_rows, 
+                       SUM(CASE WHEN customers.status IS NULL THEN 1 ELSE 0 END) as sum_status1,
+                       SUM(CASE WHEN customers.status = "Y" THEN 1 ELSE 0 END) as sum_status2,
+                       SUM(CASE WHEN customers.status = "N" AND customers.status_email = "Y" THEN 1 ELSE 0 END) as sum_status3,
+                       SUM(CASE WHEN customers.status_email = "Y" AND expired_date < CURDATE() THEN 1 ELSE 0 END) as sum_status4,
+                       SUM(CASE WHEN customers.status = "Y" THEN customers.harga ELSE 0 END) as totalharga');
 
-        // Counting records with status 'Y'
-        $this->db->where('status', 'Y');
-        $this->db->where('type', 'customer');
-        $this->db->where('DATE(customers.date) >=', $this->input->post('dateFrom'));
-        $this->db->where('DATE(customers.date) <=', $this->input->post('dateThru'));
-        $customers_status2 = $this->db->count_all_results('customers');
+        $this->db->from('customers');
+        $this->db->join('users', 'customers.id_user = users.id_user', 'left');
+        $this->db->where('customers.type', 'customer');
+        $this->db->where('DATE(customers.date) >=', $this->security->xss_clean($this->input->post('dateFrom')));
+        $this->db->where('DATE(customers.date) <=', $this->security->xss_clean($this->input->post('dateThru')));
 
-        // Counting records with status 'N'
-        $this->db->where('status', 'N');
-        $this->db->where('type', 'customer');
-        $this->db->where('DATE(customers.date) >=', $this->input->post('dateFrom'));
-        $this->db->where('DATE(customers.date) <=', $this->input->post('dateThru'));
-        $customers_status3 = $this->db->count_all_results('customers');
+        $accountNameFilter = $this->security->xss_clean($this->input->post('account_name'));
+        if (!empty($accountNameFilter)) {
+            $this->db->like('users.account_name', $accountNameFilter);
+        }
 
-        // Counting records with status 'N' and expired date <= dateThru
-        $this->db->where('status', 'N');
-        $this->db->where('type', 'customer');
-        $this->db->where('DATE(customers.date) >=', $this->input->post('dateFrom'));
-        $this->db->where('expired_date <=', $this->input->post('dateThru'));
-        $customers_status4 = $this->db->count_all_results('customers');
-
-        // Summing up the 'harga' for records with status 'Y'
-        $this->db->select('SUM(harga) as totalharga');
-        $this->db->where('status', 'Y');
-        $this->db->where('type', 'customer');
-        $this->db->where('DATE(date) >=', $this->input->post('dateFrom'));
-        $this->db->where('DATE(date) <=', $this->input->post('dateThru'));
-        $customers_status5 = $this->db->get('customers')->row();
+        $query = $this->db->get();
+        $result = $query->row();
 
         echo json_encode([
-            'sum_status1' => $customers_status1,
-            'sum_status2' => $customers_status2,
-            'sum_status3' => $customers_status3,
-            'sum_status4' => $customers_status4,
-            'sum_status5' => $customers_status5->totalharga,
+            'sum_status1' => htmlspecialchars($result->sum_status1),
+            'sum_status2' => htmlspecialchars($result->sum_status2),
+            'sum_status3' => htmlspecialchars($result->sum_status3),
+            'sum_status4' => htmlspecialchars($result->sum_status4),
+            'sum_status5' => htmlspecialchars($result->totalharga),
         ]);
     }
 
-
+   
 
     public function session()
     {

@@ -66,16 +66,22 @@
         </div>
     </div>
 </div>
-
 <script src="<?= base_url() ?>public/vendor/jquery/jquery.min.js"></script>
 
 <script>
+    function get_csrf() {
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.open("GET", '<?= base_url('ccc/get_csrf') ?>', false);
+        xmlHttp.send(null);
+        return xmlHttp.responseText;
+    }
     var jumlah = () => {
         var formData = {
             status: $('#status').val(),
             dateFrom: $('[name="dateFrom"]').val(),
             dateThru: $('[name="dateThru"]').val(),
         };
+        formData['<?= $this->security->get_csrf_token_name() ?>'] = get_csrf();
 
         // BOX 1 
         $('.totalstatus5').text('Rp 0');
@@ -123,6 +129,7 @@
                     data.status = $('[name="status"]').val();
                     data.dateFrom = $('[name="dateFrom"]').val();
                     data.dateThru = $('[name="dateThru"]').val();
+                    data.<?= $this->security->get_csrf_token_name() ?> = get_csrf();
                 }
             },
             "columnDefs": [{

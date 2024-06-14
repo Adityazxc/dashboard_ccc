@@ -16,6 +16,7 @@ class reset_password extends CI_Controller
     public function index()
     {
         $data['username'] = $this->session->userdata('username');
+        $data['role'] = $this->session->userdata('role');
         // var_dump($data);
         $this->load->view('reset_password',$data);        
 

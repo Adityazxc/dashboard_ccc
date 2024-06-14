@@ -17,11 +17,6 @@
 <link href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css" rel="stylesheet" >
 <link rel="icon" href="<?= base_url('public/img/voucher.png') ?>" type="image/png">    
 
-<?php if (isset($response_message)): ?>
-    <div class="alert alert-info" role="alert">
-        <?php echo $response_message; ?>
-    </div>
-<?php endif; ?>
 
 
 

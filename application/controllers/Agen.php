@@ -48,7 +48,7 @@ class Agen extends CI_Controller
     public function process_reset_password()
     {
 
-        $new_password = $this->input->post('password');
+        $new_password = $this->input->post('password',TRUE);
         $id_user = $this->session->userdata('id_user');
         $update_result = $this->Customer_model->update_password($id_user, $new_password);
 
@@ -92,7 +92,7 @@ class Agen extends CI_Controller
     public function search_customer()
     {
         $this->load->model('Customer_model');
-        $keyword = $this->input->post('search_keyword');
+        $keyword = $this->input->post('search_keyword',TRUE);
         $search_result = $this->Customer_model->searchCustomer($keyword);
         $data['search_result'] = $search_result;
         $data['search_keyword'] = $keyword;
@@ -114,9 +114,10 @@ class Agen extends CI_Controller
     // Agen.php (controller)
     public function redeem_voucher()
     {
-        $idCustomer = $this->input->post('id');
+        $idCustomer = $this->input->post('id',TRUE);
 
         // Assuming you have a method redeemVoucher in your Customer_model
+       
         $redeem_voucher = $this->Customer_model->reedem_voucher();
 
         if ($redeem_voucher) {
@@ -167,7 +168,7 @@ class Agen extends CI_Controller
 
     public function test()
     {
-        $data['email'] = $this->input->post('email');
+        $data['email'] = $this->input->post('email',TRUE);
 
         echo "<pre>";
         echo print_r($data);
@@ -179,29 +180,29 @@ class Agen extends CI_Controller
         $list = $this->ccc_model->getdatatables_agen();
 
         $data = array();
-        $no = @$_POST['start'];
+        $no = $this->input->post('start', true);
         foreach ($list as $item) {
             if ($item->status == 'N') {
-                $status = 'Belum Dipakai';
+                $status = 'Belum Digunakan';
             } else {
-                $status = 'Telah dipakai';
+                $status = 'Sudah Digunakan';
             }
             $no++;
             $row = array();
-            $row[] = '<small style="font-size:12px">' . $no . '</small>';
-            // $row[] = '<input type="hidden" name="id[]" value="' . $no . '"><input type="checkbox" name="id_customer[]" value="' . @$item->id . '" class="form-check-input ml-2 data-check" id="id_customer">';
-            $row[] = '<small style="font-size:12px">' . $item->customer_name . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->harga . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->awb_no . '</small>';
-            $row[] = '<small style="font-size:12px">' . $status . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->service . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->voucher . '</small>';
+            $row[] = '<small style="font-size:12px">' . $no . '</small>';            
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->customer_name) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->harga) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->service) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->awb_no) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($status) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->awbno_claim) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->voucher) . '</small>';
             $data[] = $row;
         }
         $output = array(
             "draw" => @$_POST['draw'],
-            "recordsTotal" => $this->ccc_model->count_all_customer(),
-            "recordsFiltered" => $this->ccc_model->count_filtered_customer(),
+            "recordsTotal" => $this->ccc_model->count_all_agen(),
+            "recordsFiltered" => $this->ccc_model->count_filtered_agen(),
             "data" => $data,
         );
         // output to json format
@@ -216,14 +217,14 @@ class Agen extends CI_Controller
         $this->db->where('id_user', $id_user);
         $this->db->where('status', 'Y');
         $this->db->where('type', 'customer');
-        $this->db->where('DATE(date) >=', $this->input->post('dateFrom'));
-        $this->db->where('DATE(date) <=', $this->input->post('dateThru'));
+        $this->db->where('DATE(date) >=', $this->security->xss_clean($this->input->post('dateFrom')));
+        $this->db->where('DATE(date) <=', $this->security->xss_clean($this->input->post('dateThru')));
         $this->db->group_by('id_user');
         $customers_data = $this->db->get('customers')->row();
 
         echo json_encode([
-            'sum_status2' => $customers_data->sum_status2,
-            'sum_status5' => $customers_data->sum_status5,
+            'sum_status2' => htmlspecialchars($customers_data->sum_status2),
+            'sum_status5' => htmlspecialchars($customers_data->sum_status5),
         ]);
     }
 
