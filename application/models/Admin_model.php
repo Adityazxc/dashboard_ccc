@@ -2,15 +2,17 @@
 
 class Admin_model extends CI_Model
 {
-    var $customer_column_order = array(null, 'id_user', 'account_name', 'agent_area', 'role', 'account_number', 'status_account', null); //set column field database for datatable orderable
-    var $customer_column_search = array('id_user', 'account_name', 'agent_area', 'role', 'account_number', 'status_account'); //set column field database for datatable searchable
+    var $customer_column_order = array(null, 'id_user', 'account_name','employee_position','regional','branch','origin','zone','username','kpi', 'role',  null); //set column field database for datatable orderable
+    var $customer_column_search = array('id_user', 'account_name','employee_position','regional','branch','origin','zone','username','kpi', 'role',  ); //set column field database for datatable searchable
     var $customer_order = array('id' => 'DESC');
 
     private function _getdatatables_customer()
     {
+        //
         $this->db->select('*');
-        $this->db->from('users');
-        $this->db->order_by('status_account', 'DESC');
+        // $this->db->order_by('id_user','DESC');
+        // $this->db->where('username IS NOT NULL ');   
+        $this->db->from('users');       
 
         $i = 0;
 
@@ -27,27 +29,13 @@ class Admin_model extends CI_Model
                 }
                 $i++;
             }
-        }
-
-        if (isset($_POST['order'])) {
-            $column_order_index = $_POST['order']['0']['column'];
-            if ($this->customer_column_order[$column_order_index] != null) {
-                $this->db->order_by($this->customer_column_order[$column_order_index], $_POST['order']['0']['dir']);
-            } else {
-                $this->db->order_by('status_account', 'DESC');
-            }
-        } elseif (isset($this->order)) {
-            $customer_order = $this->order;
-            $this->db->order_by(key($customer_order), $customer_order[key($customer_order)]);
-        } else {
-            // Fallback order by status_account if no order is provided
-            $this->db->order_by('status_account', 'DESC');
-        }
+        }       
 
     }
 
     function getdatatables_customer()
     {
+        //
         $this->_getdatatables_customer();
         if (@$_POST['length'] != -1)
             $this->db->limit(@$_POST['length'], @$_POST['start']);
@@ -58,16 +46,9 @@ class Admin_model extends CI_Model
 
     private function _getdatatables_user()
     {
-        $this->db->select('users.id_user,users.account_name, users.agent_area,
-         users.agent_status, users.role, users.account_number, users.status_account, 
-         user_access_log.ip_address, user_access_log.os, user_access_log.browser, 
-         user_access_log.login_time');
-        $this->db->from('users');
-        $this->db->join('user_access_log', 'users.id_user=user_access_log.user_id', 'left');
-        $this->db->where('user_access_log.ip_address IS NOT NULL');
-        $this->db->order_by('user_access_log.log_id','DESC');
-        $this->db->where('DATE(user_access_log.login_time) >=', $this->input->post('dateFrom'));
-        $this->db->where('DATE(user_access_log.login_time) <=', $this->input->post('dateThru'));        
+        $this->db->select('*');
+        $this->db->from('users');                               
+                                
 
         $i = 0;
 
@@ -123,6 +104,7 @@ class Admin_model extends CI_Model
     }
     function count_filtered_user()
     {
+        //
         $this->_getdatatables_user();
         $query = $this->db->get();
         return $query->num_rows();
@@ -130,8 +112,8 @@ class Admin_model extends CI_Model
 
     function count_all_user()
     {
+        //
         $this->db->select('*');
-
         $this->db->from('users');
         return $this->db->count_all_results();
     }

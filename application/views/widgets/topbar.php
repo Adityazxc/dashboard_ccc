@@ -1,55 +1,49 @@
-<nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+<div class="main-header">
+	<div class="main-header-logo">
+		<!-- Logo Header -->
+		<div class="logo-header" data-background-color="dark">
 
-    <!-- Sidebar Toggle (Topbar) -->
-    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
-        <i class="fa fa-bars"></i>
-    </button>
+			<div class="nav-toggle">
+				<button class="btn btn-toggle toggle-sidebar">
+					<i class="gg-menu-right"></i>
+				</button>
+				<button class="btn btn-toggle sidenav-toggler">
+					<i class="gg-menu-left"></i>
+				</button>
+			</div>
+			<button class="topbar-toggler more">
+				<i class="gg-more-vertical-alt"></i>
+			</button>
 
-    <!-- Topbar Navbar -->
-    <ul class="navbar-nav ml-auto">
+		</div>
+		<!-- End Logo Header -->
+	</div>
+	<!-- Navbar Header -->
+	<nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
 
-        <!-- Nav Item - Search Dropdown (Visible Only XS) -->
-        <li class="nav-item dropdown no-arrow d-sm-none">
-            <a class="nav-link dropdown-toggle" href="#" id="searchDropdown" role="button" data-toggle="dropdown"
-                aria-haspopup="true" aria-expanded="false">
-                <i class="fas fa-search fa-fw"></i>
-            </a>
-            <!-- Dropdown - Messages -->
-            <div class="dropdown-menu dropdown-menu-right p-3 shadow animated--grow-in"
-                aria-labelledby="searchDropdown">
-                <form class="form-inline mr-auto w-100 navbar-search">
-                    <div class="input-group">
-                        <input type="text" class="form-control bg-light border-0 small" placeholder="Search for..."
-                            aria-label="Search" aria-describedby="basic-addon2">
-                        <div class="input-group-append">
-                            <button class="btn btn-primary" type="button">
-                                <i class="fas fa-search fa-sm"></i>
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </li>
+		<div class="container-fluid">
+			<nav class="navbar navbar-header-left navbar-expand-lg navbar-form nav-search p-0 d-none d-lg-flex">
 
-        <!-- <div class="topbar-divider d-none d-sm-block"></div> -->
+			</nav>
 
-        <?php
-        $username = $this->session->userdata('username');
-        if ($role == 'Agen') {
-            echo '<li class="nav-item dropdown no-arrow">';
-            echo '<span class="mr-2 d-none d-lg-inline text-gray-600 small">' . $username . '</span>';
-            echo '<li class="nav-item dropdown no-arrow">';
-        } else {
-            echo '<li class="nav-item dropdown no-arrow">';
-            echo '<span class="mr-2 d-none d-lg-inline text-gray-600 small">' . $role . '</span>';
-            echo '<li class="nav-item dropdown no-arrow">';
-        }
-        // if($username =='')
-        ?>
+			<ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
 
 
-        </li>
+				<li class="nav-item topbar-user dropdown hidden-caret">
+					<?php
+					$account_name = $this->session->userdata('account_name');
+					$role = $this->session->userdata('role');
 
-    </ul>
+					echo '<li class="nav-item dropdown no-arrow">';
+					echo '<span class="mr-2 d-none d-lg-inline text-gray-600 small"> Hi, ' . $account_name . '<b> (' . $role . ' )</b></span>';
+					echo '<li class="nav-item dropdown no-arrow">';
 
-</nav>
+					// if($username =='')
+					?>
+
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!-- End Navbar -->
+</div>

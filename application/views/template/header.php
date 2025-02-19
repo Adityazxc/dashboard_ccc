@@ -1,23 +1,33 @@
-<!-- Custom fonts for this template -->
-<link href="<?= base_url() ?>public/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
-<link
-    href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
-    rel="stylesheet">
 
-<!-- Custom styles for this template -->
-<link href="<?= base_url() ?>public/css/sb-admin-2.min.css" rel="stylesheet">
+<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forbidden Directory</title>
 
-<!-- Custom styles for this page -->
-<link href="<?= base_url() ?>public/vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
+    <script src="<?= base_url('public/js/plugin/webfont/webfont.min.js') ?>"></script>
+    <script>
+        WebFont.load({
+            google: { "families": ["Public Sans:300,400,500,600,700"] },
+            custom: { "families": ["Font Awesome 5 Solid", "Font Awesome 5 Regular", "Font Awesome 5 Brands", "simple-line-icons"], urls: ['public/css/fonts.min.css'] },
+            active: function () {
+                sessionStorage.fonts = true;
+            }
+        });
+    </script>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="<?= base_url('public/css/bootstrap.min.css'); ?>">
+    <link rel="stylesheet" href="<?= base_url('public/css/plugins.min.css'); ?>">
+    <link rel="stylesheet" href="<?= base_url('public/css/kaiadmin.min.css'); ?>">
+    
+    <!-- Fonts -->
+
+<!-- DataTables JS -->
+<script src="<?= base_url('public/js/core/jquery-3.7.1.min.js') ?>"></script>
+
+<!-- chart -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+
+
 <!-- icon -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-
-<link href="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
-<link href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css" rel="stylesheet" >
-<link href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css" rel="stylesheet" >
-<link rel="icon" href="<?= base_url('public/img/voucher.png') ?>" type="image/png">    
-
-
-
-
-<!-- ... (kode HTML atau tampilan lainnya) ... -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">

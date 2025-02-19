@@ -26,9 +26,9 @@ class Customer_model extends CI_Model
     }
 
     public function tambah($data)
-    {
+    {      
         try {
-            $this->db->insert('customers', $data);
+            $this->db->insert_batch('destinations', $data);
             return TRUE;
         } catch (Exception $e) {
             echo 'Error: ' . $e->getMessage();
@@ -42,7 +42,7 @@ class Customer_model extends CI_Model
         $this->db->where('voucher', $keyword);
         $query = $this->db->get('customers');
 
-        if ($query->num_rows() > 0) {          
+        if ($query->num_rows() > 0) {
             $result = $query->result();
         } else {
             $result = false;
@@ -50,13 +50,15 @@ class Customer_model extends CI_Model
 
         return $result;
     }
-    public function update_password($id_user, $new_password) {
+    public function update_password($id_user, $new_password)
+    {
         $data = array(
             'password' => md5($new_password)
         );
 
         $this->db->where('id_user', $id_user);
         $this->db->update('users', $data);
+        
 
         return ($this->db->affected_rows() > 0);
     }
@@ -77,11 +79,11 @@ class Customer_model extends CI_Model
         $data = array(
             'awbno_claim' => $this->input->post('resi'),
             'id_user' => $id_user,
-            'status'=>'Y'
+            'status' => 'Y'
         );
 
-        $this->db->where('id', $this->input->post('id'));        
-        $this->db->update('customers', $data);        
+        $this->db->where('id', $this->input->post('id'));
+        $this->db->update('customers', $data);
         // Periksa apakah pembaruan berhasil
         return $this->db->affected_rows() > 0;
         // return true;
@@ -131,6 +133,16 @@ class Customer_model extends CI_Model
     {
         $this->db->where('status', 'N');
         return $this->db->count_all_results('customers');
+    }
+
+    public function isAwbNoExists($awb_no)
+    {
+        // Mencari data dengan nomor AWB yang sama  
+        $this->db->where('awb_no', $awb_no);
+        $query = $this->db->get('destinations'); // Ganti 'your_table_name' dengan nama tabel yang sesuai  
+
+        // Mengembalikan true jika ada data yang ditemukan, false jika tidak ada  
+        return $query->num_rows() > 0;
     }
 
 }
