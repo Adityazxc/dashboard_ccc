@@ -15,14 +15,16 @@
 			color: #0C7FDA;
 		}
 	</style>
+	<!-- Menambahkan Font Awesome via CDN -->
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 
 	<div class="sidebar-logo">
 		<!-- Logo Header -->
 		<div class="logo-header" data-background-color="white">
+			<!-- <img src="public/img/supaneko.png" style="height:auto; max-width:100%; display:block;"> -->
+			<img src="<?= base_url("public/img/camera.svg") ?>" style="height:50px; max-width:100%; display:block;">
+			Validasi
 
-			<a href="<?= base_url('admin') ?>" class="logo">
-				<img src="public/img/supaneko.png" style="height:auto; max-width:100%; display:block;">
-			</a>
 			<div class="nav-toggle">
 				<button class="btn btn-toggle toggle-sidebar">
 					<i class="gg-menu-right"></i>
@@ -38,206 +40,58 @@
 		</div>
 		<!-- End Logo Header -->
 	</div>
+
 	<div class="sidebar-wrapper scrollbar scrollbar-inner">
 		<div class="sidebar-content">
 			<ul class="nav nav-secondary">
 
-				<?php if ($role == 'Upper'): ?>
-					<li
-						class="nav-item <?php echo ($this->uri->segment(1) == 'admin' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
-						<a href="<?php echo base_url('admin'); ?>">
+				<?php if (
+					$role == "Koordinator"
+					|| $role == "Admin"
+					|| $role == "Super User"
+					|| $role == "CS"
+					|| $role == "CCC"
+					|| $role == "BPS"
+					|| $role == "HC"
+					|| $role == "Kepala Cabang BDO2"
+					|| $role == "Kepala Cabang"
+					|| $role == "PAO"
+					|| $role == "BBP"
+				): ?>
+					<!-- Jika password tidak cocok, nonaktifkan link -->
+					<li class="nav-item <?php echo ($this->uri->segment(1) == 'dashboard') ? 'active' : ''; ?>">
+						<a href="<?php echo base_url('dashboard'); ?>">
 							<i class="bi bi-speedometer"></i>
 							<span>Dashboard</span>
 						</a>
 					</li>
-					<li
-						class="nav-item <?php echo ($this->uri->segment(1) == 'product' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
-						<a href="<?php echo base_url('product'); ?>">
-							<i class="fas fa-tshirt"></i>
-							<span>Product</span>
-						</a>
-					</li>
-					<li
-						class="nav-item <?php echo ($this->uri->segment(1) == 'selling' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
-						<a href="<?php echo base_url('selling'); ?>">
-							<i class="fa fa-shopping-cart"></i>
-							<span>Order</span>
-						</a>
-					</li>
-					<li
-						class="nav-item <?php echo ($this->uri->segment(1) == 'stock' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
-						<a href="<?php echo base_url('stock'); ?>">
-							<i class="fas fa-warehouse"></i>
-							<span>Stock</span>
-						</a>
-					</li>
-					<li
-						class="nav-item <?php echo ($this->uri->segment(1) == 'spending' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
-						<a href="<?php echo base_url('spending'); ?>">
-							<i class="bi bi-cash"></i>
-							<span>Spending</span>
-						</a>
-					</li>
-					<li
-						class="nav-item <?php echo ($this->uri->segment(1) == 'users' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
-						<a href="<?php echo base_url('users'); ?>">
-							<i class="fa fa-user"></i>
-							<span>Users</span>
-						</a>
-					</li>
-					<li
-						class="nav-item <?php echo ($this->uri->segment(1) == 'reset_password' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
-						<a href="<?php echo base_url('reset_password'); ?>">
-							<i class="fa fa-key"></i>
-							<span>Reset Password</span>
+					<li class="nav-item <?php echo ($this->uri->segment(1) == 'admin') ? 'active' : ''; ?>">
+						<a href="<?php echo base_url('admin'); ?>">
+							<i class="fas fa-check-circle"></i>
+							<span>Validasi</span>
 						</a>
 					</li>
 				<?php endif; ?>
-				<?php if ($role == 'Admin'): ?>
+				<?php if ($role == "Super User" || $role == "HC"): ?>
 					<li
-						class="nav-item <?php echo ($this->uri->segment(1) == 'admin' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
-						<a href="<?php echo base_url('admin'); ?>">
-							<i class="bi bi-speedometer"></i>
-							<span>Dashboard</span>
+						class="nav-item <?php echo ($this->uri->segment(1) == 'courier' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
+						<a href="<?php echo base_url('courier'); ?>">
+							<i class="fas fa-shipping-fast"></i>
+							<span>Kurir</span>
 						</a>
 					</li>
+
+				<?php endif; ?>
+				<?php if ($role == "Super User"): ?>
 					<li
-						class="nav-item <?php echo ($this->uri->segment(1) == 'product' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
-						<a href="<?php echo base_url('product'); ?>">
-							<i class="fas fa-tshirt"></i>
-							<span>Product</span>
-						</a>
-					</li>
-					<li
-						class="nav-item <?php echo ($this->uri->segment(1) == 'selling' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
-						<a href="<?php echo base_url('selling'); ?>">
-							<i class="fa fa-shopping-cart"></i>
-							<span>Order</span>
-						</a>
-					</li>
-					<li
-						class="nav-item <?php echo ($this->uri->segment(1) == 'stock' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
-						<a href="<?php echo base_url('stock'); ?>">
-							<i class="fas fa-warehouse"></i>
-							<span>Stock</span>
-						</a>
-					</li>
-					<li
-						class="nav-item <?php echo ($this->uri->segment(1) == 'reset_password' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
-						<a href="<?php echo base_url('reset_password'); ?>">
-							<i class="fa fa-key"></i>
-							<span>Reset Password</span>
+						class="nav-item <?php echo ($this->uri->segment(1) == 'users' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
+						<a href="<?php echo base_url('users'); ?>">
+							<i class="bi bi-person"></i>
+							<span>Users</span>
 						</a>
 					</li>
 				<?php endif; ?>
 
-				<?php if ($role == 'Production'): ?>
-					<li
-						class="nav-item <?php echo ($this->uri->segment(1) == 'admin' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
-						<a href="<?php echo base_url('admin'); ?>">
-							<i class="bi bi-speedometer"></i>
-							<span>Dashboard</span>
-							<!-- <?php echo '<<span class="mr-2 d-none d-lg-inline text-gray-600 small"> hehe ' . $role . ' f</small>'; ?> -->
-						</a>
-					</li>
-					<li
-						class="nav-item <?php echo ($this->uri->segment(1) == 'product' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
-						<a href="<?php echo base_url('product'); ?>">
-							<i class="fas fa-tshirt"></i>
-							<span>Product</span>
-						</a>
-					</li>
-					<li
-						class="nav-item <?php echo ($this->uri->segment(1) == 'selling' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
-						<a href="<?php echo base_url('selling'); ?>">
-							<i class="fa fa-shopping-cart"></i>
-							<span>Order</span>
-						</a>
-					</li>
-					<li
-						class="nav-item <?php echo ($this->uri->segment(1) == 'stock' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
-						<a href="<?php echo base_url('stock'); ?>">
-							<i class="fas fa-warehouse"></i>
-							<span>Stock</span>
-						</a>
-					</li>
-					<li
-						class="nav-item <?php echo ($this->uri->segment(1) == 'reset_password' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
-						<a href="<?php echo base_url('reset_password'); ?>">
-							<i class="fa fa-key"></i>
-							<span>Reset Password</span>
-						</a>
-					</li>
-					<!-- <li
-						class="nav-item <?php echo ($this->uri->segment(1) == 'Spending' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
-						<a href="<?php echo base_url('selling'); ?>">
-							<i class="fa fa-money"></i>
-							<span>Spending</span>
-						</a>
-					</li>							 -->
-				<?php endif; ?>
-				<?php if ($role == 'Finance'): ?>
-					<li
-						class="nav-item <?php echo ($this->uri->segment(1) == 'admin' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
-						<a href="<?php echo base_url('admin'); ?>">
-							<i class="bi bi-speedometer"></i>
-							<span>Dashboard</span>
-							<!-- <?php echo '<<span class="mr-2 d-none d-lg-inline text-gray-600 small"> hehe ' . $role . ' f</small>'; ?> -->
-						</a>
-					</li>
-					<li
-						class="nav-item <?php echo ($this->uri->segment(1) == 'product' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
-						<a href="<?php echo base_url('product'); ?>">
-							<i class="fas fa-tshirt"></i>
-							<span>Product</span>
-						</a>
-					</li>
-					<li
-						class="nav-item <?php echo ($this->uri->segment(1) == 'selling' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
-						<a href="<?php echo base_url('selling'); ?>">
-							<i class="fa fa-shopping-cart"></i>
-							<span>Order</span>
-						</a>
-					</li>
-					<li
-						class="nav-item <?php echo ($this->uri->segment(1) == 'reset_password' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
-						<a href="<?php echo base_url('reset_password'); ?>">
-							<i class="fa fa-key"></i>
-							<span>Reset Password</span>
-						</a>
-					</li>
-					<!-- <li
-						class="nav-item <?php echo ($this->uri->segment(1) == 'Spending' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
-						<a href="<?php echo base_url('selling'); ?>">
-							<i class="fa fa-money"></i>
-							<span>Spending</span>
-						</a>
-					</li>							 -->
-				<?php endif; ?>
-				<?php if ($role == 'Marketing'): ?>
-					<li
-						class="nav-item <?php echo ($this->uri->segment(1) == 'admin' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
-						<a href="<?php echo base_url('admin'); ?>">
-							<i class="bi bi-speedometer"></i>
-							<span>Dashboard</span>
-							<!-- <?php echo '<<span class="mr-2 d-none d-lg-inline text-gray-600 small"> hehe ' . $role . ' f</small>'; ?> -->
-						</a>
-					</li>
-					<li
-						class="nav-item <?php echo ($this->uri->segment(1) == 'product' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
-						<a href="<?php echo base_url('product'); ?>">
-							<i class="fas fa-tshirt"></i>
-							<span>Product</span>
-						</a>
-					</li>
-					<li
-						class="nav-item <?php echo ($this->uri->segment(1) == 'reset_password' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">
-						<a href="<?php echo base_url('reset_password'); ?>">
-							<i class="fa fa-key"></i>
-							<span>Reset Password</span>
-						</a>
-					</li>
-				<?php endif; ?>
 
 				<li class="nav-item" style="margin:10px">
 					<a role="button" style="width: 100%;" class="btn btn-danger logout-btn"

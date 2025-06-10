@@ -1,30 +1,28 @@
 <script>
     $(document).ready(function () {
-        // Ambil pesan notifikasi dari PHP
-        var notifyMessage = "<?= $this->session->flashdata('notify')['message'] ?? '' ?>";
-        var notifyType = "<?= $this->session->flashdata('notify')['type'] ?? '' ?>";
+        var notifyData = <?= json_encode($this->session->flashdata('notify')) ?>;
 
-        // Jika ada pesan, tampilkan notifikasi
-        if (notifyMessage) {
+
+        if (notifyData && notifyData.message) {            
             $.notify({
-                message: notifyMessage
+                message: notifyData.message
             }, {
-                type: notifyType,
-                delay: 3000, // Durasi notifikasi dalam milidetik
+                type: notifyData.type,
+                delay: 3000,
                 placement: {
                     from: "top",
-                    align: "right" // Posisi notifikasi
+                    align: "right"
                 },
-                offset: {
-                    x: 20,
-                    y: 70
-                }
+                offset: { x: 20, y: 70 }
             });
+                      
         }
     });
 </script>
+
 <script src="<?= base_url('public/js/core/popper.min.js') ?>"></script>
 <script src="<?= base_url('public/js/core/bootstrap.min.js') ?>"></script>
+
 
 
 <!-- jQuery Scrollbar -->

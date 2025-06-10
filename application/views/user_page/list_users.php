@@ -2,11 +2,12 @@
     <div class="card-header  text-white px-4">
         <div class="d-flex justify-content-between align-item-center">
             <div class="me-4">
-                <h2 class="card-title text-primary mb-0 ">User</h2>
+                <h2 class="card-title text-primary mb-0 ">Users</h2>
             </div>
 
         </div>
     </div>
+
     <div class="card-body p-4">
         <div class="d-flex">
             <button class="btn btn-primary btn-round ms-auto mb-3" data-bs-toggle="modal" data-bs-target="#addUser">
@@ -22,6 +23,8 @@
                         <th>No</th>
                         <th>Account Name</th>
                         <th>Username</th>
+                        <th>Location</th>
+                        <th>No Hp</th>
                         <th>Role</th>
                         <th>Action</th>
 
@@ -34,6 +37,11 @@
         </div>
     </div>
 </div>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+
+
 <?php $this->load->view('user_page/modal_add_users') ?>
 <?php $this->load->view('user_page/edit_user') ?>
 <script>
@@ -69,29 +77,24 @@
             }
         });
     });
-    function detailUsers(id, username) {
-        $('#message-warning').text('Apakah anda yakin akan reset password ' + username + ' ?');
-        $('#idUser').val(id);
-        $('#newPasswordInput').val('123456');
-      
-        $('#idDeletUser').val(id);
 
-    }
-    function deleteUsers(id, username) {        
-        $('#idUserDelete').val(id);     
-        $('#message-delete-user').text('Apakah anda yakin akan akan menghapus user ' + username + ' ?');    
+    function deleteUsers(id, username) {
+        $('#idUserDelete').val(id);
+        $('#message-delete-user').text('Apakah anda yakin akan akan menghapus user ' + username + ' ?');
     }
     function resetPassword(id, username) {
         $('#message-warning').text('Apakah anda yakin akan reset password ' + username + ' ke default ?');
         $('#idUserReset').val(id);
-        $('#newPasswordInput').val('123456');        
+        $('#newPasswordInput').val('123456');
     }
-    function editUsers(id, account_name, role, username) {
-        $('#message-edit-user').text('Anda akan merubah data dari user ' + account_name + ' ?');
+    function editUsers(id, username, location, no_hp, role, name) {
+        $('#message-edit-user').text('Anda akan merubah data dari user ' + name + ' ?');
         $('#idUserEdit').val(id);
-        $('#accountNameEdit').val(account_name);
+        $('#accountNameEdit').val(name);
         $('#usernameEdit').val(username);
-        $('#defaultRoleEdit').val(role);
+        $('#noHpEdit').val(no_hp);
+        $("#defaultRoleEdit").val(role).trigger("change");
+        $("#defaultLocationEdit").val(location).trigger("change");
 
     }
 
@@ -103,8 +106,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="exampleModalLabel">Reset Default Password</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">                    
                 </button>
             </div>
             <form action="<?= base_url('users/default_password') ?>" method="POST" enctype="multipart/form-data">
@@ -124,7 +126,7 @@
                 </div>
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Add</button>
+                    <button type="submit" class="btn btn-primary">Reset</button>
                 </div>
             </form>
 
@@ -139,8 +141,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="exampleModalLabel">Delete Password</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">                    
                 </button>
             </div>
             <form action="<?= base_url('users/delete_users') ?>" method="POST" enctype="multipart/form-data">

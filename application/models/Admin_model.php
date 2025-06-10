@@ -33,6 +33,75 @@ class Admin_model extends CI_Model
 
     }
 
+    // public function _get()
+    // {
+    public function getSourceData($dateFrom, $dateThru,$origin,$zone)
+    {
+        $this->db->where('DATE(ch.create_date) >=', $dateFrom);
+        $this->db->where('DATE(ch.create_date) <=', $dateThru);
+        $this->db->select('ch.status_checker, COUNT(*) as count');
+        $this->db->from('checker ch');
+        $this->db->join('zone z', 'ch.zone = z.zone_code', 'left');
+        $this->db->group_by('ch.status_checker');
+        if (!empty($origin) && empty($zone)) {
+            $this->db->where('z.origin_code', $origin);
+        }
+        if (!empty($origin) && !empty($zone)) {
+            $this->db->where('ch.zone', $zone);
+            $this->db->where('z.origin_code', $origin);
+        }
+        $query = $this->db->get();
+        return $query->result_array();
+    }
+    public function getSourceDataMultiple($year,$origin,$zone)
+    {
+        $this->db->select('ch.status_checker, MONTH(ch.create_date) AS month, COUNT(*) AS count, z.*');        
+        $this->db->from('checker ch');
+        $this->db->join('zone z', 'ch.zone = z.zone_code', 'left');
+        $this->db->where('YEAR(ch.create_date)', $year);
+        $this->db->group_by(['ch.status_checker', 'MONTH(ch.create_date)']);
+        $this->db->order_by('ch.status_checker', 'ASC');
+        $this->db->order_by('month', 'ASC');       
+        if (!empty($origin) && empty($zone)) {
+            $this->db->where('z.origin_code', $origin);
+        }
+        if (!empty($origin) && !empty($zone)) {
+            $this->db->where('ch.zone', $zone);
+            $this->db->where('z.origin_code', $origin);
+        }
+        return $this->db->get()->result_array();
+    }
+  
+    public function _get_origins()
+    {
+        $this->db->distinct();
+        $this->db->select('*');
+        $this->db->group_by('origin_name');
+        $this->db->from('zone');
+        $query = $this->db->get();
+        $result = $query->result();        
+        return $result; 
+    }
+    public function _get_zone($origin)
+    {
+        $this->db->distinct();
+        $this->db->select('*');
+        $this->db->from('zone');
+        $this->db->where('origin_code',$origin);
+        $query = $this->db->get();
+        $result = $query->result();        
+        return $result; 
+    }
+    public function _destination_code($zone_code)
+    {
+        $this->db->distinct();
+        $this->db->select('*');
+        $this->db->from('destination_code');
+        $this->db->where('origin_code',$zone_code);
+        $query = $this->db->get();
+        $result = $query->result();        
+        return $result; 
+    }
     function getdatatables_customer()
     {
         //

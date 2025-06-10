@@ -53,7 +53,7 @@ class Customer_model extends CI_Model
     public function update_password($id_user, $new_password)
     {
         $data = array(
-            'password' => md5($new_password)
+            'pass' => md5($new_password)
         );
 
         $this->db->where('id_user', $id_user);

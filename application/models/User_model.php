@@ -2,8 +2,8 @@
 defined('BASEPATH') or exit('No direct script access allowed');
 class User_model extends CI_Model
 {
-    var $customer_column_order = array(null, 'id_user', 'account_name', 'username', 'role', null); //set column field database for datatable orderable
-    var $customer_column_search = array('id_user', 'account_name', 'username', 'role', ); //set column field database for datatable searchable
+    var $customer_column_order = array(null, 'id_user', 'username', 'name', 'location', 'role', "no_hp", null); //set column field database for datatable orderable
+    var $customer_column_search = array('id_user', 'username', 'name', 'location', 'role', "no_hp", ); //set column field database for datatable searchable
     var $customer_order = array('id_user' => 'DESC');
     public function get_user_details($id)
     {
@@ -13,8 +13,9 @@ class User_model extends CI_Model
     }
     private function _getdatatables_users()
     {
-        $this->db->select('*');
-        $this->db->from('users');
+        $this->db->select('u.*,z.*');
+        $this->db->from('users u');
+        $this->db->join('zone z', 'z.zone_code=u.location', 'left');
 
         $i = 0;
 
@@ -39,8 +40,16 @@ class User_model extends CI_Model
             $customer_order = $this->order;
             $this->db->order_by(key($customer_order), $customer_order[key($customer_order)]);
         }
+    }  
+    public function _get_origins()
+    {
+        $this->db->distinct();
+        $this->db->select('*');        
+        $this->db->from('zone');
+        $query = $this->db->get();
+        $result = $query->result();        
+        return $result; 
     }
-
     function getdatatables_users()
     {
         $this->_getdatatables_users();
@@ -76,7 +85,7 @@ class User_model extends CI_Model
     public function default_password($id_user)
     {
         $newPassword = md5('123456');
-        $data = array('password' => $newPassword);
+        $data = array('pass' => $newPassword);
         $this->db->where('id_user', $id_user);
         $this->db->update('users', $data);
         return $this->db->affected_rows() > 0;

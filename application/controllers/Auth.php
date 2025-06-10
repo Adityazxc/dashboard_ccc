@@ -43,7 +43,7 @@ class Auth extends CI_Controller
         $this->db->group_start();
         $this->db->where('username', $username);        
         $this->db->group_end();
-        $this->db->where('password', md5($password));
+        $this->db->where('pass', md5($password));
 
         $query = $this->db->get('users');
 
@@ -55,12 +55,18 @@ class Auth extends CI_Controller
                 $redirect_page = "reset_password/input_password";
             } else {
                 switch ($user->role) {                    
-                    case "Upper":
+                    case "Koordinator":
                     case "Admin":
-                    case "Finance":
-                    case "Marketing":
-                    case "Production":
-                        $redirect_page = "admin";
+                    case "BPS":
+                    case "Kepala Cabang":
+                    case "CS":
+                    case "CCC":
+                    case "HC":
+                    case "Kepala Cabang BDO2":
+                    case "Super User":
+                    case "BBP":
+                    case "PAO":
+                        $redirect_page = "dashboard";
                         break;
                 }
             }
@@ -68,9 +74,10 @@ class Auth extends CI_Controller
             $data_user = array(
                 'id_user' => $user->id_user,
                 'username' => $user->username,
-                'account_name' => $user->account_name,
+                'account_name' => $user->name,
                 'role' => $user->role,  
-                'password'=>$user->password,                                          
+                'password'=>$user->pass,                                          
+                'location'=>$user->location,                                          
                 'logged_in' => TRUE
             );
 

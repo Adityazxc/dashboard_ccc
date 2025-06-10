@@ -3,7 +3,7 @@
     <div class="col-md-6">
       <div class="card">
         <div class="card-header">Halo, <b>
-            <?= $username ?> (
+            <?= $account_name?> (
             <?= $role ?>)
           </b> reset password terlebih dahulu!</div>
         <div class="card-body">
@@ -14,7 +14,7 @@
                 <input type="password" class="form-control" name="password" id="password" autocomplete="off" required>
                 <input type="hidden" id="ModaladdCustomerModal_csrf"
                   name="<?= $this->security->get_csrf_token_name() ?>"
-                  value="<?= $this->security->get_csrf_hash() ?>" />
+                  value="<?= $this->security->get_csrf_hash() ?>" autocomplete="off" />
                 <div class="input-group-append">
                   <button type="button" class="btn btn-outline-secondary"
                     onclick="togglePasswordVisibility()">Show</button>

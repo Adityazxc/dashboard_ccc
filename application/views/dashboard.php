@@ -6,27 +6,27 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title><?= $title ?></title>
     <meta content='width=device-width, initial-scale=1.0, shrink-to-fit=no' name='viewport' />
-    <link rel="icon" href="<?= base_url('public/img/Suupaaneko_Logogram.png') ?>" type="image/png">
+    <link rel="icon" href="<?= base_url('public/img/camera.svg') ?>" type="image/svg+xml">
 
 
-    <?php include 'template/header.php' ?>
+    <?php $this->load->view('template/header.php') ?>
 </head>
 
 
 <body>
     <div class="wrapper">
         <!-- Sidebar --> 
-        <?php include 'widgets/sidebar.php' ?>
+        <?php $this->load->view('widgets/sidebar.php') ?>
         <!-- End Sidebar -->
 
         <div class="main-panel">
             
 
-                <?php include 'widgets/topbar.php'?>
+                <?php $this->load->view('widgets/topbar.php')?>
                 
                 <div class="container">
                     <div class="page-inner">
-                        <?php include $this->session->userdata('pages') . '/' . $page_name . '.php' ?>
+                        <?php $this->load->view( $this->session->userdata('pages') . '/' . $page_name . '.php') ?>
                     </div>
                 </div>
                 
@@ -35,7 +35,7 @@
         </div>
         
     </body>
-    <?php include 'template/bottom.php' ?>
+    <?php $this->load->view( 'template/bottom.php' )?>
 </div>
 <script>
     var idleTime = 0;

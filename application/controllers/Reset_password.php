@@ -24,6 +24,7 @@ class reset_password extends CI_Controller
             $data['title'] = 'Reset Password';
             $data['page_name'] = 'update_password';
             $data['username'] = $this->session->userdata('username');
+            $data['account_name'] = $this->session->userdata('account_name');
             $data['role'] = $this->session->userdata('role');                        
             $this->load->view('dashboard', $data);
         }
@@ -35,6 +36,7 @@ class reset_password extends CI_Controller
         $data['title'] = 'Reset Password';
         $data['page_name'] = 'input_password';
         $data['username'] = $this->session->userdata('username');
+        $data['account_name'] = $this->session->userdata('account_name');
         $data['role'] = $this->session->userdata('role');
         $data['password'] = $this->session->userdata('password');
         // var_dump($data);
@@ -58,6 +60,8 @@ class reset_password extends CI_Controller
             // Terjadi kesalahan saat mengubah password
             $this->session->set_flashdata('error_message', 'Password gagal di rubah');
         }
+
+        redirect('auth');
 
     }
 

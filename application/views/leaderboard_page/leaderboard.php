@@ -1,0 +1,240 @@
+<form id="filterForm">
+    <div class="row">
+        <div class="form-group col-md-3">
+            <label for="dateFrom">From:</label>
+            <input type="date" class="form-control" id="dateFrom" name="dateFrom" value="<?= date('Y-m-d') ?>">
+        </div>
+        <div class="form-group col-md-3">
+            <label for="dateThru">Thru:</label>
+            <input type="date" class="form-control" id="dateThru" name="dateThru" value="<?= date('Y-m-d') ?>">
+        </div>
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+        <?php
+        $full_access = in_array($role, ['Admin', 'BPS', 'Super User', 'HC', 'PAO', 'CS', 'CCC', 'Kepala Cabang']);
+        $zone_only = in_array($role, ['Kepala Cabang BDO2', 'BBP']);
+        $get_origins_array = json_decode($get_origins, true);
+
+        // Ambil origin code dari object jika zone_only
+        $selected_origin = $zone_only ? $origin : $origin;
+        ?>
+
+        <!-- ORIGIN -->
+        <div class="form-group col-md-3">
+            <label for="origin" class="form-label required">Origin:</label>
+            <select class="form-select select2" name="origin" id="origin" <?= (!$full_access) ? 'disabled' : '' ?>>
+                <option value="">-- Pilih Origin --</option>
+                <?php foreach ($get_origins_array as $get_origin): ?>
+                    <option value="<?= $get_origin['origin_code'] ?>" <?= (!$full_access && $get_origin['origin_code'] == $origin) ? 'selected' : '' ?>>
+                        <?= $get_origin['origin_name'] ?> (<?= $get_origin['origin_code'] ?>)
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+
+        <!-- ZONE -->
+        <div class="form-group col-md-3">
+            <label for="zone" class="form-label required">Zone:</label>
+            <select class="form-select select2" name="zone" id="zone" <?= (!$full_access && !$zone_only) ? 'disabled' : '' ?>>
+                <option value="">-- Pilih Zone --</option>
+                <?php if (!$full_access && !$zone_only && !empty($zone)): ?>
+                    <option value="<?= $zone ?>" selected><?= $zone ?></option>
+                <?php endif; ?>
+            </select>
+        </div>
+
+        <!-- Hidden Input jika tidak boleh ubah -->
+        <?php if (!$full_access && !$zone_only): ?>
+            <input type="hidden" name="origin" value="<?= $selected_origin ?>">
+            <input type="hidden" name="zone" value="<?= $zone ?>">
+        <?php endif; ?>
+
+        <script>
+            $(document).ready(function () {
+                $('#origin').select2({
+                    placeholder: "-- Pilih Origin --",
+                    allowClear: true,
+                    width: '100%'
+                });
+
+                $('#zone').select2({
+                    placeholder: "-- Pilih Zone --",
+                    allowClear: true,
+                    width: '100%'
+                });
+
+                function loadZones(originCode, selectedZone = '') {
+                    $.ajax({
+                        url: '<?= base_url('admin/get_zone'); ?>',
+                        method: 'POST',
+                        data: { origin: originCode },
+                        dataType: 'json',
+                        success: function (response) {
+                            let options = '<option value="">-- Pilih Zone --</option>';
+                            $.each(response, function (index, z) {
+                                const selected = (z.zone_code === selectedZone) ? 'selected' : '';
+                                options += `<option value="${z.zone_code}" ${selected}>${z.zone}</option>`;
+                            });
+                            $('#zone').html(options).trigger('change');
+                        },
+                        error: function () {
+                            alert('Gagal mengambil data zone.');
+                        }
+                    });
+                }
+
+                // Jika zone_only, otomatis load zones saat halaman dibuka
+                const isZoneOnly = <?= $zone_only ? 'true' : 'false' ?>;
+                const selectedOrigin = '<?= $selected_origin ?>';
+                const selectedZone = '<?= $zone ?>';
+                if (isZoneOnly && selectedOrigin !== '') {
+                    loadZones(selectedOrigin, selectedZone);
+                }
+
+                // Jika full_access, boleh pilih origin → trigger zone ajax
+                $('#origin').on('change', function () {
+                    const origin = $(this).val();
+                    if (origin) {
+                        loadZones(origin);
+                    } else {
+                        $('#zone').html('<option value="">-- Pilih Zone --</option>').trigger('change');
+                    }
+                });
+            });
+        </script>
+
+    </div>
+
+</form>
+
+<!-- Top Kurir -->
+<div class="card card-raised">
+    <div class="card-body p-4">
+        <div class="card-header text-white px-4">
+            <div class="d-flex justify-content-between align-item-center">
+                <div class="me-4">
+                    <h2 class="card-title text-primary mb-0 ">Top Kurir Sesuai</h2>
+                </div>    
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table id="table_top_courier" class="display table table-striped table-hover" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>No</th>                        
+                        <th>Kurir</th>
+                        <th>Total Awb</th>
+                        <th>AWB Sesuai</th>
+                        <th>AWB Tidak Sesuai</th>
+                        <th>Persentase %</th>
+                    </tr>
+                </thead>
+                <tbody>
+    
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script>
+    $(document).ready(function () {
+        var role= "<?=$role?>";        
+        var table = $('#table_top_courier').DataTable({
+            "processing": true,
+            "serverSide": true,
+            "pageLength": 3,
+            "lengthMenu": [[5, 10, 25, 50, 100], [5, 10, 25, 50, 100]],
+            "ajax": {
+                "url": "<?= base_url('leaderboard/getdatatables_top_courier') ?>",
+                "type": "POST",
+                "data": function (d) {
+                    d.dateFrom = $('[name="dateFrom"]').val();
+                    d.dateThru = $('[name="dateThru"]').val();
+                    d.origin = $('[name="origin"]').val().trim();
+                    d.zone = $('[name="zone"]').val().trim();
+                    d.role = role;
+                    
+                }
+            },
+            "columnDefs": [
+                {
+                    "targets": [],
+                    "orderable": false,
+                    "className": 'text-center'
+                }
+            ],
+            "dom": 'Bfrtip',
+            "buttons": ['copy', 'csv', 'excel', 'pdf', 'print']
+        });          
+        $('[name="dateFrom"], [name="dateThru"], [name="origin"], [name="zone"]').on('change', function () {
+        table.ajax.reload(null, false); // reload without resetting the paging
+        jumlah();
+    });   
+    });
+</script>
+<!-- Top Kurir tidak sesuai -->
+<div class="card card-raised">
+    <div class="card-body p-4">
+        <div class="card-header text-white px-4">
+            <div class="d-flex justify-content-between align-item-center">
+                <div class="me-4">
+                    <h2 class="card-title text-primary mb-0 ">Top Kurir Tidak Sesuai</h2>
+                </div>    
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table id="table_worst_courier" class="display table table-striped table-hover" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>No</th>                        
+                        <th>Kurir</th>
+                        <th>Total Awb</th>
+                        <th>AWB Sesuai</th>
+                        <th>AWB Tidak Sesuai</th>
+                        <th>Persentase %</th>
+                    </tr>
+                </thead>
+                <tbody>
+    
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script>
+    $(document).ready(function () {
+        var role= "<?=$role?>";        
+        var table = $('#table_worst_courier').DataTable({
+            "processing": true,
+            "serverSide": true,
+            "pageLength": 3,
+            "lengthMenu": [[5, 10, 25, 50, 100], [5, 10, 25, 50, 100]],
+            "ajax": {
+                "url": "<?= base_url('leaderboard/getdatatables_worst_courier') ?>",
+                "type": "POST",
+                "data": function (d) {
+                    d.dateFrom = $('[name="dateFrom"]').val();
+                    d.dateThru = $('[name="dateThru"]').val();
+                    d.origin = $('[name="origin"]').val().trim();
+                    d.zone = $('[name="zone"]').val().trim();
+                    d.role = role;
+                    
+                }
+            },
+            "columnDefs": [
+                {
+                    "targets": [],
+                    "orderable": false,
+                    "className": 'text-center'
+                }
+            ],
+            "dom": 'Bfrtip',
+            "buttons": ['copy', 'csv', 'excel', 'pdf', 'print']
+        });          
+        $('[name="dateFrom"], [name="dateThru"], [name="origin"], [name="zone"]').on('change', function () {
+        table.ajax.reload(null, false); // reload without resetting the paging
+        jumlah();
+    });   
+    });
+</script>

@@ -3,8 +3,10 @@
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Suupaaneko
+<title>Validasi
 </title>
+<link rel="icon" href="<?= base_url('public/img/camera.svg') ?>" type="image/svg+xml">
+
 
 <script src="<?= base_url('public/js/plugin/webfont/webfont.min.js') ?>"></script>
 <script>
@@ -30,7 +32,7 @@
 <!-- chart -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
-<link rel="icon" href="<?= base_url('public/img/Suupaaneko_Logogram.png') ?>" type="image/png">
+<!-- <link rel="icon" href="<?= base_url('public/img/Suupaaneko_Logogram.png') ?>" type="image/png"> -->
 
 <!-- icon -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
@@ -44,7 +46,7 @@
         <link rel="icon" href="assets/img/kaiadmin/favicon.ico" type="image/x-icon" />
 
         <title>
-            Suupaaneko Login
+            Validasi Login
         </title>
         <!-- <link href="<?= base_url() ?>public/vendor/fontawesome-free/css/all.min.css" rel="stylesheet"> -->
 
@@ -78,7 +80,8 @@ if ($this->session->flashdata('error_message')) {
 <body class="login bg-primary">
     <div class="wrapper wrapper-login">
         <div class="container container-login animated fadeIn">
-            <img src="public/img/supaneko.png" style="height:auto; max-width:100%; display:block;">
+            <!-- <img src="public/img/supaneko.png" style="height:auto; max-width:100%; display:block;"> -->
+            <img src="public/img/logistics.svg" style="height:auto; max-width:100%; display:block;">
             <h3 class="text-center">Sign In</h3>
             <div class="login-form">
                 <form class="user" action="<?php echo base_url('auth/login'); ?>" method="post">
