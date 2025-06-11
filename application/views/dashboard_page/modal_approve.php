@@ -164,6 +164,7 @@
                   <i class="bi bi-whatsapp">
                                 <text class="text-left ">${noTlp}</text>
                             </i>
+                            </a>
                 </div>
             </div>
         </div>
@@ -282,6 +283,7 @@ function modalRevision(urlPod,urlRevision,awb, receiverAddress, receiverName, li
                   <i class="bi bi-whatsapp">
                                 <text class="text-left ">${noTlp}</text>
                             </i>
+                            </a>
                 </div>
             </div>
         </div>

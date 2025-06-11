@@ -121,6 +121,9 @@ class Admin extends CI_Controller
         $id_courier = $this->input->post("id_courier");
 
         if ($this->Checker_model->_change_status($id_courier, $id_checker)) {
+            // Refresh materialize
+            $this->Checker_model->refresh_mv_checker_summary();
+
             $response = [
                 'status' => 'success',
                 'message' => 'Status POD berhasil diperbarui!'
@@ -141,6 +144,8 @@ class Admin extends CI_Controller
         $id_courier = $this->input->post("id_courier");
 
         if ($this->Checker_model->_change_status_approve($id_courier, $id_checker)) {
+            // Refresh materialize
+            $this->Checker_model->refresh_mv_checker_summary();
             $response = [
                 'status' => 'success',
                 'message' => 'Status POD berhasil diperbarui!'
@@ -157,11 +162,7 @@ class Admin extends CI_Controller
 
         echo json_encode($response);
     }
-    public function testing()
-    {
 
-
-    }
 
 
     public function getdatatables_checker()
@@ -330,74 +331,53 @@ class Admin extends CI_Controller
         ]);
     }
 
-    // public function delete_validasi()
-    // {
-    //     $id_courier = $this->input->post('id_courrier_delete');
-    //     $create_date = $this->input->post('create_date_delete');
-    //     $id_checker = $this->input->post('id_checker_delete');
-    //     if ($this->Upload_model->delete_validasi($id_courier, $create_date,$id_checker)) {
-    //         // Jika berhasil, set flashdata untuk notifikasi sukses
-    //         $this->session->set_flashdata('notify', [
-    //             'message' => 'Validasi berhasil dihapus!',
-    //             'type' => 'success'
-    //         ]);
-    //     } else {
-    //         // Jika gagal, set flashdata untuk notifikasi error
-    //         $this->session->set_flashdata('notify', [
-    //             'message' => 'Gagal hapus Validasi!',
-    //             'type' => 'warning'
-    //         ]);
-    //     }
-    //     // var_dump($id_courier,$create_date);
-    //     redirect('admin');
-    // }
-
+// bug di hapus url revision
     public function delete_validasi()
     {
         $id_courier = $this->input->post('id_courrier_delete');
         $create_date = $this->input->post('create_date_delete');
-               
+
         if ($this->Upload_model->delete_validasi($id_courier, $create_date)) {
 
-        // Cek dan hapus file jika bukan 'public/img/Image-not-found.png'
-        $default_img = 'public/img/Image-not-found.png';
-        $deleted_files = [];
+            // Cek dan hapus file jika bukan 'public/img/Image-not-found.png'
+            $default_img = 'public/img/Image-not-found.png';
+            $deleted_files = [];
 
-        $data_list = $this->Upload_model->get_image_paths($id_courier, $create_date);
+            $data_list = $this->Upload_model->get_image_paths($id_courier, $create_date);
 
-        foreach ($data_list as $data) {
-            foreach (['url_photo', 'url_pod', 'url_revision'] as $field) {
-                if (!empty($data->$field)) {
-                    $image_path = $data->$field;
+            foreach ($data_list as $data) {
+                foreach (['url_photo', 'url_pod', 'url_revision'] as $field) {
+                    if (!empty($data->$field)) {
+                        $image_path = $data->$field;
 
-                    // Skip default image
-                    if ($image_path === $default_img) {
-                        var_dump("Melewati default image: $image_path");
-                        continue;
-                    }
-
-                    $full_path = FCPATH . $image_path;
-
-                    var_dump('Coba hapus file: ' . $full_path);
-
-                    if (file_exists($full_path) && is_file($full_path)) {
-                        if (unlink($full_path)) {
-                            $deleted_files[] = $image_path;
-                            var_dump('Berhasil hapus file: ' . $full_path);
-                        } else {
-                            var_dump('Gagal hapus file: ' . $full_path);
+                        // Skip default image
+                        if ($image_path === $default_img) {
+                            var_dump("Melewati default image: $image_path");
+                            continue;
                         }
-                    } else {
-                        var_dump('File tidak ditemukan: ' . $full_path);
+
+                        $full_path = FCPATH . $image_path;
+
+                        var_dump('Coba hapus file: ' . $full_path);
+
+                        if (file_exists($full_path) && is_file($full_path)) {
+                            if (unlink($full_path)) {
+                                $deleted_files[] = $image_path;
+                                var_dump('Berhasil hapus file: ' . $full_path);
+                            } else {
+                                var_dump('Gagal hapus file: ' . $full_path);
+                            }
+                        } else {
+                            var_dump('File tidak ditemukan: ' . $full_path);
+                        }
                     }
                 }
             }
-        }
 
-        $this->session->set_flashdata('notify', [
-            'message' => 'Validasi dan ' . count($deleted_files) . ' file berhasil dihapus!',
-            'type' => 'success'
-        ]);
+            $this->session->set_flashdata('notify', [
+                'message' => 'Validasi dan ' . count($deleted_files) . ' file berhasil dihapus!',
+                'type' => 'success'
+            ]);
         } else {
             $this->session->set_flashdata('notify', [
                 'message' => 'Gagal hapus Validasi!',
@@ -405,12 +385,14 @@ class Admin extends CI_Controller
             ]);
         }
 
+        // Refresh materialize
+        $this->Checker_model->refresh_mv_checker_summary();
         redirect('admin');
     }
 
     public function testing_delete()
     {
-        $path = "uploads/images/684105229bac9.jpg";
+        $path = "uploads/images_revision/revision_1749629088.jpg";
         if (file_exists($path)) {
             echo "Ada file. ";
             if (unlink($path)) {
@@ -427,7 +409,7 @@ class Admin extends CI_Controller
     public function get_path()
     {
         $id_courier = "BDO3476";
-        $create_date = "2025-06-10 09:26:51";
+        $create_date = "2025-06-11 09:26:51";
 
         $results = $this->Upload_model->get_image_paths($id_courier, $create_date);
 

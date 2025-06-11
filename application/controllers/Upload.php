@@ -222,7 +222,8 @@ class Upload extends CI_Controller
                     'type' => 'warning'
                 ]);
             }
-
+            // Refresh materialize
+            $this->Checker_model->refresh_mv_checker_summary();
             redirect('admin');
             // echo '<pre>';
             // print_r($batch_data); // Menampilkan array dalam format yang lebih terbaca
@@ -237,71 +238,72 @@ class Upload extends CI_Controller
     }
 
     public function revision()
-{
-    $awb = $this->input->post('awb');
-    $reason = $this->input->post('reason');
+    {
+        $awb = $this->input->post('awb');
+        $reason = $this->input->post('reason');
 
-    $file = $_FILES['revision_img'];
+        $file = $_FILES['revision_img'];
 
-    if ($file['name']) {
-        $config['upload_path'] = './uploads/images_revision/';
-        $config['allowed_types'] = 'jpg|jpeg|png|gif';
-        $config['max_size'] = 10048; // dalam KB (10MB)
-        $config['file_name'] = 'revision_' . time();
+        if ($file['name']) {
+            $config['upload_path'] = './uploads/images_revision/';
+            $config['allowed_types'] = 'jpg|jpeg|png|gif';
+            $config['max_size'] = 10048; // dalam KB (10MB)
+            $config['file_name'] = 'revision_' . time();
 
-        $this->load->library('upload', $config);
+            $this->load->library('upload', $config);
 
-        if (!$this->upload->do_upload('revision_img')) {
-            echo "Upload Error: " . $this->upload->display_errors();
-            return;
-        }
-
-        $uploadData = $this->upload->data();
-        $imgPath = 'uploads/images_revision/' . $uploadData['file_name'];
-
-        //  CEK UKURAN FILE: jika >= 500 KB, baru kompres
-        $fileSizeBytes = filesize($uploadData['full_path']); // dalam byte
-        if ($fileSizeBytes >= 512000) { // 500 KB = 512000 byte
-            // === COMPRESS IMAGE ===
-            $compress_config['image_library'] = 'gd2';
-            $compress_config['source_image'] = $uploadData['full_path'];
-            $compress_config['create_thumb'] = FALSE;
-            $compress_config['maintain_ratio'] = TRUE;
-            $compress_config['quality'] = '60';
-            $compress_config['width'] = 1280;
-            $compress_config['height'] = 1280;
-            $compress_config['overwrite'] = TRUE;
-
-            $this->load->library('image_lib', $compress_config);
-            $this->image_lib->initialize($compress_config);
-
-            if (!$this->image_lib->resize()) {
-                echo "Compress Error: " . $this->image_lib->display_errors();
+            if (!$this->upload->do_upload('revision_img')) {
+                echo "Upload Error: " . $this->upload->display_errors();
                 return;
             }
+
+            $uploadData = $this->upload->data();
+            $imgPath = 'uploads/images_revision/' . $uploadData['file_name'];
+
+            //  CEK UKURAN FILE: jika >= 500 KB, baru kompres
+            $fileSizeBytes = filesize($uploadData['full_path']); // dalam byte
+            if ($fileSizeBytes >= 512000) { // 500 KB = 512000 byte
+                // === COMPRESS IMAGE ===
+                $compress_config['image_library'] = 'gd2';
+                $compress_config['source_image'] = $uploadData['full_path'];
+                $compress_config['create_thumb'] = FALSE;
+                $compress_config['maintain_ratio'] = TRUE;
+                $compress_config['quality'] = '60';
+                $compress_config['width'] = 1280;
+                $compress_config['height'] = 1280;
+                $compress_config['overwrite'] = TRUE;
+
+                $this->load->library('image_lib', $compress_config);
+                $this->image_lib->initialize($compress_config);
+
+                if (!$this->image_lib->resize()) {
+                    echo "Compress Error: " . $this->image_lib->display_errors();
+                    return;
+                }
+            }
+
+            // Simpan ke database
+            $data = [
+                'reason_revision' => $reason,
+                'url_revision' => $imgPath,
+                'status_checker' => "Revisi",
+            ];
+
+            $this->Checker_model->_revision_image($awb, $data);
+            // Refresh materialize
+            $this->Checker_model->refresh_mv_checker_summary();
+            $this->session->set_flashdata('notify', [
+                'message' => 'Image berhasil direvisi.',
+                'type' => 'success'
+            ]);
+        } else {
+            $this->session->set_flashdata('notify', [
+                'message' => 'Image gagal berhasil direvisi!',
+                'type' => 'warning'
+            ]);
         }
-
-        // Simpan ke database
-        $data = [
-            'reason_revision' => $reason,
-            'url_revision' => $imgPath,
-            'status_checker' => "Revisi",
-        ];
-
-        $this->Checker_model->_revision_image($awb, $data);
-
-        $this->session->set_flashdata('notify', [
-            'message' => 'Image berhasil direvisi.',
-            'type' => 'success'
-        ]);
-    } else {
-        $this->session->set_flashdata('notify', [
-            'message' => 'Image gagal berhasil direvisi!',
-            'type' => 'warning'
-        ]);
+        redirect($_SERVER['HTTP_REFERER']);
     }
-    redirect($_SERVER['HTTP_REFERER']);
-}
 
 
 

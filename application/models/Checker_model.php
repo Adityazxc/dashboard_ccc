@@ -14,7 +14,7 @@ class Checker_model extends CI_Model
         $origin = $this->input->post('origin', TRUE);
         $zone = $this->input->post('zone', TRUE);
         $role = $this->input->post('role', TRUE);
-        $this->db->from('validasi_pod_view ch');
+        $this->db->from('mv_checker_summary ch');
         $this->db->where('ch.create_date >=', $dateFrom . ' 00:00:00');
         $this->db->where('ch.create_date <=', $dateThru . ' 23:59:59');
         if (!empty($origin) && empty($zone)) {
@@ -73,7 +73,7 @@ class Checker_model extends CI_Model
     {
 
         $this->db->select('*');
-        $this->db->from('checker');
+        $this->db->from('mv_checker_summary ch');
         return $this->db->count_all_results();
     }
     function get_zone_name($zone_code){
@@ -241,5 +241,37 @@ class Checker_model extends CI_Model
         return $result;
 
     }
+
+    public function refresh_mv_checker_summary()
+{
+    // Kosongkan dulu
+    $this->db->truncate('mv_checker_summary');
+
+    // Masukkan ulang data
+    $this->db->query("
+        INSERT INTO mv_checker_summary
+        SELECT
+            ch.id_courier,
+            ch.id_checker,
+            DATE(ch.runsheet_date) AS runsheet_date,
+            ch.create_date,
+            ch.upload_by,
+            ch.zone,
+            ch.status_checker,
+            COUNT(ch.id_courier) AS qty_awb,
+            SUM(CASE WHEN ch.status_checker = 'Sesuai' THEN 1 ELSE 0 END) AS qty_sesuai,
+            SUM(CASE WHEN ch.status_checker = 'Revisi' THEN 1 ELSE 0 END) AS qty_revisi,
+            SUM(CASE WHEN ch.status_checker = 'Tidak Sesuai' THEN 1 ELSE 0 END) AS qty_tidak_sesuai,
+            (SELECT courier_name FROM courier WHERE id_courier = ch.id_courier) AS courier_name,
+            (SELECT zone FROM zone WHERE zone.zone_code = ch.zone) AS zone_name,
+            (SELECT origin_code FROM zone WHERE zone.zone_code = ch.zone) AS origin_code,
+            (SELECT role FROM users WHERE id_user = ch.upload_by) AS role,
+            (SELECT name FROM users WHERE id_user = ch.upload_by) AS name,
+            (SELECT username FROM users WHERE id_user = ch.upload_by) AS username
+        FROM checker ch
+        GROUP BY ch.id_courier, DATE(ch.runsheet_date)
+    ");
+}
+
 }
 ?>
