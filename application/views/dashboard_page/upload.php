@@ -216,7 +216,7 @@
                         autocomplete="off">
                     <input type="hidden" class="form-control" name="id_checker_delete" id="id_checker_delete"
                         autocomplete="off">
-                    <input type="hidden" class="form-control" name="create_date_delete" id="create_date_delete"
+                    <input type="hidden" class="form-control" name="runsheet_date_delete" id="runsheet_date_delete"
                         autocomplete="off" required>
                 </div>                
                 <div class="modal-footer">
@@ -233,11 +233,12 @@
 
 <script type="text/javascript">
     
-    function deleteValidasi(id_courier, id_checker,create_date, courier_name) {
+    function deleteValidasi(id_courier, id_checker,create_date,runsheet_date, courier_name) {
         $('#message-warning').html('Apakah anda yakin akan hapus validasi <b> ' + courier_name +',</b> pada tanggal upload <b>'+ create_date +'</b>?');        
         $('#id_checker_delete').val(id_checker);        
         $('#id_courrier_delete').val(id_courier);        
         $('#create_date_delete').val(create_date);        
+        $('#runsheet_date_delete').val(runsheet_date);        
     }
     
 

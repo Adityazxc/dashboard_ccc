@@ -201,6 +201,7 @@ class Admin extends CI_Controller
             \'' . addslashes(trim($item->id_courier)) . '\',
             \'' . addslashes(trim($item->id_checker)) . '\',
             \'' . addslashes(trim($item->create_date)) . '\',
+            \'' . addslashes(trim($item->runsheet_date)) . '\',
             \'' . addslashes(trim($item->courier_name)) . '\')"
             data-bs-toggle="modal" data-bs-target="#deleteValidasi">
             <i class="fa fa-times"></i>
@@ -331,19 +332,20 @@ class Admin extends CI_Controller
         ]);
     }
 
-// bug di hapus url revision
+// cbug di hapus url revision
     public function delete_validasi()
     {
         $id_courier = $this->input->post('id_courrier_delete');
-        $create_date = $this->input->post('create_date_delete');
+        $runsheet_date = $this->input->post('runsheet_date_delete');
+        // $create_date = $this->input->post('create_date_delete');
 
-        if ($this->Upload_model->delete_validasi($id_courier, $create_date)) {
+        if ($this->Upload_model->delete_validasi($id_courier, $runsheet_date)) {
 
             // Cek dan hapus file jika bukan 'public/img/Image-not-found.png'
             $default_img = 'public/img/Image-not-found.png';
             $deleted_files = [];
 
-            $data_list = $this->Upload_model->get_image_paths($id_courier, $create_date);
+            $data_list = $this->Upload_model->get_image_paths($id_courier, $runsheet_date);
 
             foreach ($data_list as $data) {
                 foreach (['url_photo', 'url_pod', 'url_revision'] as $field) {
@@ -375,7 +377,7 @@ class Admin extends CI_Controller
             }
 
             $this->session->set_flashdata('notify', [
-                'message' => 'Validasi dan ' . count($deleted_files) . ' file berhasil dihapus!',
+                'message' => 'Validasi berhasil dihapus!',
                 'type' => 'success'
             ]);
         } else {
@@ -387,6 +389,9 @@ class Admin extends CI_Controller
 
         // Refresh materialize
         $this->Checker_model->refresh_mv_checker_summary();
+        // $date_only = date('Y-m-d', strtotime($runsheet_date));
+
+        // var_dump($id_courier, $date_only);
         redirect('admin');
     }
 
@@ -408,8 +413,8 @@ class Admin extends CI_Controller
 
     public function get_path()
     {
-        $id_courier = "BDO3476";
-        $create_date = "2025-06-11 09:26:51";
+        $id_courier = "BDO026";
+        $create_date = "2025-06-12 11:44:52";
 
         $results = $this->Upload_model->get_image_paths($id_courier, $create_date);
 

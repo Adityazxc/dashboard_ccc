@@ -16,7 +16,7 @@ class Upload_model extends CI_Model
 
         // Ambil data terlebih dahulu
         $this->db->where('id_courier', $id_courier);
-        $this->db->where('DATE(create_date)', $create_date);        
+        $this->db->where('DATE(runsheet_date)', $create_date);        
         $result = $this->db->get('checker')->result();
 
         foreach ($result as $row) {
@@ -34,19 +34,19 @@ class Upload_model extends CI_Model
 
         // Hapus dari database
         $this->db->where('id_courier', $id_courier);
-        $this->db->where('DATE(create_date)', $create_date);
+        $this->db->where('DATE(runsheet_date)', $create_date);
         $this->db->delete('checker');
 
         return $this->db->affected_rows() > 0;
     }
 
-    public function get_image_paths($id_courier, $create_date)
+    public function get_image_paths($id_courier, $runsheet_date)
     {
-        $date_only = date('Y-m-d', strtotime($create_date));
+        $date_only = date('Y-m-d', strtotime($runsheet_date));
 
         $results = $this->db->select('id_checker, url_photo, url_pod, url_revision')
             ->where('id_courier', $id_courier)
-            ->where('DATE(create_date)', $date_only)
+            ->where('DATE(runsheet_date)', $date_only)
             ->get('checker')
             ->result();
 

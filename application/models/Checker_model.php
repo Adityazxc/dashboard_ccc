@@ -243,35 +243,45 @@ class Checker_model extends CI_Model
     }
 
     public function refresh_mv_checker_summary()
-{
-    // Kosongkan dulu
-    $this->db->truncate('mv_checker_summary');
+    {
+        // 1. Kosongkan tabel summary
+        $this->db->query('TRUNCATE TABLE mv_checker_summary');
 
-    // Masukkan ulang data
-    $this->db->query("
-        INSERT INTO mv_checker_summary
-        SELECT
-            ch.id_courier,
-            ch.id_checker,
-            DATE(ch.runsheet_date) AS runsheet_date,
-            ch.create_date,
-            ch.upload_by,
-            ch.zone,
-            ch.status_checker,
-            COUNT(ch.id_courier) AS qty_awb,
-            SUM(CASE WHEN ch.status_checker = 'Sesuai' THEN 1 ELSE 0 END) AS qty_sesuai,
-            SUM(CASE WHEN ch.status_checker = 'Revisi' THEN 1 ELSE 0 END) AS qty_revisi,
-            SUM(CASE WHEN ch.status_checker = 'Tidak Sesuai' THEN 1 ELSE 0 END) AS qty_tidak_sesuai,
-            (SELECT courier_name FROM courier WHERE id_courier = ch.id_courier) AS courier_name,
-            (SELECT zone FROM zone WHERE zone.zone_code = ch.zone) AS zone_name,
-            (SELECT origin_code FROM zone WHERE zone.zone_code = ch.zone) AS origin_code,
-            (SELECT role FROM users WHERE id_user = ch.upload_by) AS role,
-            (SELECT name FROM users WHERE id_user = ch.upload_by) AS name,
-            (SELECT username FROM users WHERE id_user = ch.upload_by) AS username
-        FROM checker ch
-        GROUP BY ch.id_courier, DATE(ch.runsheet_date)
-    ");
-}
+        // 2. Isi ulang dari tabel checker dan relasi lainnya
+        $sql = "
+            INSERT INTO mv_checker_summary (
+                id_courier, id_checker, runsheet_date, create_date, upload_by,
+                zone, status_checker, qty_awb, qty_sesuai, qty_revisi, qty_tidak_sesuai,
+                courier_name, zone_name, origin_code, role, name, username
+            )
+            SELECT
+                ch.id_courier,
+                ch.id_checker,
+                DATE(ch.runsheet_date) AS runsheet_date,
+                ch.create_date,
+                ch.upload_by,
+                ch.zone,
+                ch.status_checker,
+                COUNT(ch.id_courier) AS qty_awb,
+                SUM(CASE WHEN ch.status_checker = 'Sesuai' THEN 1 ELSE 0 END) AS qty_sesuai,
+                SUM(CASE WHEN ch.status_checker = 'Revisi' THEN 1 ELSE 0 END) AS qty_revisi,
+                SUM(CASE WHEN ch.status_checker = 'Tidak Sesuai' THEN 1 ELSE 0 END) AS qty_tidak_sesuai,
+                c.courier_name,
+                z.zone AS zone_name,
+                z.origin_code,
+                u.role,
+                u.name,
+                u.username
+            FROM checker ch
+            LEFT JOIN courier c ON c.id_courier = ch.id_courier
+            LEFT JOIN zone z ON z.zone_code = ch.zone
+            LEFT JOIN users u ON u.id_user = ch.upload_by
+            GROUP BY ch.id_courier, DATE(ch.runsheet_date)
+        ";
+
+        $this->db->query($sql);
+    }
+
 
 }
 ?>
