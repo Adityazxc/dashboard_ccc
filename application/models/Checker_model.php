@@ -3,17 +3,18 @@
 class Checker_model extends CI_Model
 {
 
-    var $checker_column_order = array(null, "ch.id_courier", "courier_name",  "qty_sesuai","qty_revisi", "qty_tidak_sesuai", "ch.runsheet_date", "ch.upload_by", "ch.zone","zone_name"); //set column field database for datatable orderable
-    var $checker_column_search = array("ch.id_courier", "courier_name",  "ch.zone"); //set column field database for datatable orderable
+    var $checker_column_order = array(null, "ch.id_courier", "courier_name", "qty_sesuai", "qty_revisi", "qty_tidak_sesuai", "ch.runsheet_date", "ch.upload_by", "ch.zone", "zone_name"); //set column field database for datatable orderable
+    var $checker_column_search = array("ch.id_courier", "courier_name", "ch.zone"); //set column field database for datatable orderable
 
     private function _getdatatables_checker()
-    {       
+    {
 
         $dateFrom = $this->input->post('dateFrom', TRUE);
         $dateThru = $this->input->post('dateThru', TRUE);
         $origin = $this->input->post('origin', TRUE);
         $zone = $this->input->post('zone', TRUE);
         $role = $this->input->post('role', TRUE);
+        
         $this->db->from('mv_checker_summary ch');
         $this->db->where('ch.create_date >=', $dateFrom . ' 00:00:00');
         $this->db->where('ch.create_date <=', $dateThru . ' 23:59:59');
@@ -24,7 +25,7 @@ class Checker_model extends CI_Model
             $this->db->where('ch.zone', $zone);
             $this->db->where('ch.origin_code', $origin);
         }
-        if(!empty($role)&& $role=="Koordinator"){
+        if (!empty($role) && $role == "Koordinator") {
             $this->db->where('ch.role', $role);
         }
 
@@ -76,19 +77,20 @@ class Checker_model extends CI_Model
         $this->db->from('mv_checker_summary ch');
         return $this->db->count_all_results();
     }
-    function get_zone_name($zone_code){
+    function get_zone_name($zone_code)
+    {
         $this->db->select('zone');
         $this->db->from('zone');
         $this->db->where('zone_code', $zone_code);
         $query = $this->db->get();
-    
+
         if ($query->num_rows() > 0) {
             return $query->row()->zone;  // Mengembalikan langsung string zone-nya
         } else {
             return null;  // Atau bisa juga return ''; tergantung kebutuhan
         }
     }
-    
+
 
     public function _add_checker($data)
     {
@@ -168,10 +170,10 @@ class Checker_model extends CI_Model
         // Tambahan: urut berdasarkan tanggal
         $this->db->order_by("ch.runsheet_date", "ASC");
 
-        $query = $this->db->get();        
+        $query = $this->db->get();
         return [
-            'data' => $query->result(),          
-            'num_rows' => $query->num_rows()    
+            'data' => $query->result(),
+            'num_rows' => $query->num_rows()
         ];
     }
 
@@ -189,8 +191,8 @@ class Checker_model extends CI_Model
 
         $query = $this->db->get();
         return [
-            'data' => $query->result(),            
-            'num_rows' => $query->num_rows()    
+            'data' => $query->result(),
+            'num_rows' => $query->num_rows()
         ];
 
     }
@@ -208,8 +210,8 @@ class Checker_model extends CI_Model
 
         $query = $this->db->get();
         return [
-            'data' => $query->result(),            
-            'num_rows' => $query->num_rows()    
+            'data' => $query->result(),
+            'num_rows' => $query->num_rows()
         ];
 
     }
@@ -230,14 +232,14 @@ class Checker_model extends CI_Model
         // Mengembalikan true jika ada data yang ditemukan, false jika tidak ada  
         return $query->num_rows() > 0;
     }
-    
+
     public function _get_origin($zone)
     {
         $this->db->select('origin_code');
         $this->db->where('zone_code', $zone);
         $this->db->from('zone');
         $query = $this->db->get();
-        $result = $query->row();        
+        $result = $query->row();
         return $result;
 
     }
@@ -281,6 +283,62 @@ class Checker_model extends CI_Model
 
         $this->db->query($sql);
     }
+
+    public function backup_and_cleanup_checker()
+    {
+        $sql = "
+        INSERT INTO summary_checker (
+            id_courier, id_checker, runsheet_date, create_date, upload_by,
+            zone, status_checker, qty_awb, qty_sesuai, qty_revisi, qty_tidak_sesuai,
+            courier_name, zone_name, origin_code, role, name, username
+        )
+        SELECT
+            ch.id_courier,
+            ch.id_checker,
+            DATE(ch.runsheet_date),
+            ch.create_date,
+            ch.upload_by,
+            ch.zone,
+            ch.status_checker,
+            COUNT(ch.id_courier),
+            SUM(CASE WHEN ch.status_checker = 'Sesuai' THEN 1 ELSE 0 END),
+            SUM(CASE WHEN ch.status_checker = 'Revisi' THEN 1 ELSE 0 END),
+            SUM(CASE WHEN ch.status_checker = 'Tidak Sesuai' THEN 1 ELSE 0 END),
+            c.courier_name,
+            z.zone,
+            z.origin_code,
+            u.role,
+            u.name,
+            u.username
+        FROM checker ch
+        LEFT JOIN courier c ON c.id_courier = ch.id_courier
+        LEFT JOIN zone z ON z.zone_code = ch.zone
+        LEFT JOIN users u ON u.id_user = ch.upload_by
+        WHERE ch.runsheet_date < CURDATE() - INTERVAL 14 DAY
+        GROUP BY ch.id_courier, DATE(ch.runsheet_date)
+    ";
+        $this->db->query($sql);
+
+        // Ambil data gambar
+        $old_data = $this->db->where('runsheet_date <', date('Y-m-d', strtotime('-14 days')))
+            ->get('checker')->result();
+
+        foreach ($old_data as $row) {
+            foreach (['url_photo', 'url_pod', 'url_revision'] as $field) {
+                if (!empty($row->$field) && $row->$field !== 'public/img/Image-not-found.png') {
+                    $full_path = FCPATH . $row->$field;
+                    if (file_exists($full_path)) {
+                        @unlink($full_path);
+                    }
+                }
+            }
+        }
+
+        // Hapus data checker lebih dari 30 hari
+        $this->db->where('runsheet_date <', date('Y-m-d', strtotime('-14 days')))
+            ->delete('checker');
+    }
+
 
 
 }

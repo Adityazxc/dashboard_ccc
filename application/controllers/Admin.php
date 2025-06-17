@@ -440,4 +440,16 @@ class Admin extends CI_Controller
         $data['get_csrf_hash'] = $this->security->get_csrf_hash();
         echo json_encode($data);
     }
+
+    public function backup_data(){
+        $this->Checker_model->backup_and_cleanup_checker();
+        $this->Checker_model->refresh_mv_checker_summary();
+
+        redirect('admin/');
+    }
+    public function refresh_db(){        
+        $this->Checker_model->refresh_mv_checker_summary();
+
+        redirect('admin/');
+    }
 }
