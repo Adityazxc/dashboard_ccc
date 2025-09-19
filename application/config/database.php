@@ -75,6 +75,11 @@ $query_builder = TRUE;
 
 $db['default'] = array(
 	'dsn'	=> '',
+	// 'hostname' => '192.168.154.18',
+	// 'username' => 'dev',
+	// 'password' => 'K@camata829#',
+	// 'database' => 'testing_pod',
+	// 'dbdriver' => 'mysqli',
 	'hostname' => 'localhost',
 	'username' => 'root',
 	'password' => '',

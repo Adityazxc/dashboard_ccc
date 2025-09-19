@@ -27,6 +27,8 @@ class Admin extends CI_Controller
         $zone = $this->session->userdata('location');
         $origin = $this->Checker_model->_get_origin($zone);
         $get_origins = json_encode($this->Admin_model->_get_origins());
+        $get_origins_array = json_decode($get_origins, true);
+
 
         if ($password == "e10adc3949ba59abbe56e057f20f883e") {
             redirect('reset_password/input_password');
@@ -60,6 +62,7 @@ class Admin extends CI_Controller
     }
 
 
+
     public function get_zone()
     {
         $origin = $this->input->post('origin'); // Ambil kategori dari AJAX       
@@ -83,19 +86,21 @@ class Admin extends CI_Controller
         //     redirect('auth');
         // }
 
-
     }
-    public function detail($encrypted_id, $runsheet_date)
+    public function detail($encrypted_id, $runsheet_date, $status_pod,$no_runsheet)
     {
 
         $user_role = $this->session->userdata('role');
         $id_courier = base64_decode(urldecode($encrypted_id));
+        $status_pod = base64_decode(urldecode($status_pod));
         $runsheet_date = base64_decode(urldecode($runsheet_date));
+        $no_runsheet = base64_decode(urldecode($no_runsheet));
         $checker_approve = $this->Checker_model->_get_data_approve($id_courier, $runsheet_date);
         $checker_not_approve = $this->Checker_model->_get_data_not_approve($id_courier, $runsheet_date);
-        $checker_revision = $this->Checker_model->_get_data_revision($id_courier, $runsheet_date);
+        $checker_revision = $this->Checker_model->_get_data_revision($id_courier, $runsheet_date);        
 
         $data['courier'] = $this->Checker_model->_get_data_courier($id_courier);
+        $data['progress'] = $this->Checker_model->_get_progress($id_courier, $runsheet_date);
         $data['data_checkers_approve'] = $checker_approve['data'];
         $data['summary_checkers_approve'] = $checker_approve['num_rows'];
         $data['data_checkers_not_approve'] = $checker_not_approve['data'];
@@ -106,28 +111,83 @@ class Admin extends CI_Controller
         $data['runsheet_date'] = $runsheet_date;
         $data['role'] = $user_role;
         $data['hrs'] = $runsheet_date;
+        $data['no_runsheet'] = $no_runsheet;
         $data['id_courier'] = $id_courier;
         $data['title'] = 'Detail Courier';
+        $data['status_pod'] = $status_pod;
         $this->load->view('dashboard', $data);
 
 
         // var_dump($id_courier);
         // var_dump($encrypted_id);
     }
+    
+   
+    //sampe sini
 
+    public function change_status_awb(){
+        $runsheet_date=date("Y-m-d",strtotime($this->input->post("runsheet_date_status_pod")));             
+        $id_courier=$this->input->post("id_courier_status_pod");        
+        if ($this->Checker_model->change_status_awb($runsheet_date,$id_courier)) {
+
+            
+            $response = [
+                'status' => 'success',
+                'message' => 'Status AWB berhasil di ubah!',
+                'redirect' => base_url('admin')
+            ];
+            $this->refresh_db();
+        } else {
+            $response = [
+                'status' => 'danger',
+                'message' => 'Status AWB gagal di ubah',  
+                'redirect' => base_url('admin')              
+            ];
+        }
+           
+        echo json_encode($response);
+    }
+
+
+    public function select_runsheet(){
+        $id_courier=$this->input->post("select_courier");
+        $dateFrom=$this->input->post("dateFrom");
+        $dateThru=$this->input->post("dateThru");
+        $no_runsheet=$this->Checker_model->_select_runsheet($id_courier,$dateFrom,$dateThru);        
+
+        // var_dump($id_courier,$dateFrom,$dateThru);
+        echo json_encode($no_runsheet);
+    }
+    
     public function change_status()
     {
         $id_checker = $this->input->post("ids");
         $id_courier = $this->input->post("id_courier");
+        $runsheet_date = $this->input->post("runsheet_date");
+        $no_runsheet = $this->input->post("no_runsheet");
+
+        
 
         if ($this->Checker_model->_change_status($id_courier, $id_checker)) {
             // Refresh materialize
             $this->Checker_model->refresh_mv_checker_summary();
-
-            $response = [
-                'status' => 'success',
-                'message' => 'Status POD berhasil diperbarui!'
-            ];
+            $point_photo_pod = $this->Leaderboard_model->get_status_photo_pod($id_courier, $runsheet_date);
+    
+                
+            if ($this->Leaderboard_model->update_poin_photo_pod($no_runsheet, $point_photo_pod)) {
+                $response = [
+                    'status' => 'success',
+                    'message' => 'Status POD berhasil diperbarui!'
+                ];
+            } else {
+                $response = [
+                    'status' => 'danger',
+                    'message' => 'Gagal mengubah poin POD'
+                ];
+            }
+                    
+            $this->Leaderboard_model->refresh_total_poin($no_runsheet);
+            $this->Leaderboard_model->refresh_mv_leaderboard_summary();
         } else {
 
             $response = [
@@ -141,15 +201,31 @@ class Admin extends CI_Controller
     public function change_status_approve()
     {
         $id_checker = $this->input->post("ids_tidak_sesuai");
-        $id_courier = $this->input->post("id_courier");
+        $id_courier = $this->input->post("id_courier_approve");        
+        $runsheet_date = $this->input->post("runsheet_date_approve");
+        $no_runsheet = $this->input->post("no_runsheet_approve");
+
+        // var_dump($id_checker,$runsheet_date,$no_runsheet);
 
         if ($this->Checker_model->_change_status_approve($id_courier, $id_checker)) {
             // Refresh materialize
             $this->Checker_model->refresh_mv_checker_summary();
-            $response = [
-                'status' => 'success',
-                'message' => 'Status POD berhasil diperbarui!'
-            ];
+            $point_photo_pod = $this->Leaderboard_model->get_status_photo_pod($id_courier, $runsheet_date);
+    
+                
+            if ($this->Leaderboard_model->update_poin_photo_pod($no_runsheet, $point_photo_pod)) {
+                $response = [
+                    'status' => 'success',
+                    'message' => 'Status POD berhasil diperbarui!'
+                ];
+            } else {
+                $response = [
+                    'status' => 'danger',
+                    'message' => 'Gagal mengubah poin POD'
+                ];
+            }
+                    
+            $this->Leaderboard_model->refresh_total_poin($no_runsheet);
         } else {
 
             $response = [
@@ -173,6 +249,9 @@ class Admin extends CI_Controller
         $no = $this->input->post('start', true);
         foreach ($list as $item) {
             $zone = $item->zone;
+            $persentase_progres = ($item->success_pod / ($item->success_pod + $item->in_progress_pod)) * 100;
+            $status_pod=$item->status_pod;
+         
 
             $no++;
             $row = array();
@@ -183,29 +262,59 @@ class Admin extends CI_Controller
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->qty_sesuai) . '</small>';
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->qty_tidak_sesuai) . '</small>';
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->qty_revisi) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->runsheet_date) . '</small>';
+            $row[] = '<b style="font-size:12px">' . htmlspecialchars($item->success_pod) . ' / ' . htmlspecialchars($item->in_progress_pod) . '</b>
+            <br>
+            <div class="progress">
+                <div class="progress-bar progress-bar-striped" style="width:' . $persentase_progres . '%">' . number_format($persentase_progres, 1) . '%</div>
+            </div>
+            ';
+            // $date_only = date('Y-m-d', strtotime($runsheet_date));
+            $row[] = '<small style="font-size:12px">' . date('Y-m-d', strtotime($item->runsheet_date)) . '</small>';
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->name) . '</small>';
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($zone) . '</small>';
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($this->Checker_model->get_zone_name($item->zone)) . '</small>';
-            $button = '
-    <div class="form-button-action"> 
-        <a href="' . base_url('admin/detail/' . urlencode(base64_encode($item->id_courier)) . '/' . urlencode(base64_encode($item->runsheet_date))) . '"  
+            if (!empty($status_pod)) {
+                $row[] = '<span class="badge rounded-pill bg-success"> Approve </span>';
+            } else {
+                $row[] = '<span class="badge rounded-pill bg-warning"> In Progress </span>';
+            }
+
+            $button = ' <div class="form-button-action"> ';
+
+            if ($item->source_table === 'mv') {
+                $button .= '
+        <a href="' . base_url('admin/detail/' . urlencode(base64_encode($item->id_courier)) . '/' . urlencode(base64_encode($item->runsheet_date)) . '/' . urlencode(base64_encode(isset($item->status_pod) ? $item->status_pod : "T")). '/' . urlencode(base64_encode(isset($item->no_runsheet) ? $item->no_runsheet : "N"))) . '" 
             class="btn btn-dark waves-effect waves-light btn-sm me-1" 
             title="Detail" data-plugin="tippy" data-tippy-placement="top">
             <i class="fa fa-info-circle"> Detail</i>
         </a>';
 
-            if ($user_role === "Super User") {
+            }
+
+            if ($user_role === "Super User" && $item->source_table === 'mv') {
+
                 $button .= '
         <button class="btn btn-link btn-danger btn-lg" onclick="deleteValidasi(
             \'' . addslashes(trim($item->id_courier)) . '\',
             \'' . addslashes(trim($item->id_checker)) . '\',
             \'' . addslashes(trim($item->create_date)) . '\',
             \'' . addslashes(trim($item->runsheet_date)) . '\',
+            \'' . addslashes(trim($item->no_runsheet)) . '\',
             \'' . addslashes(trim($item->courier_name)) . '\')"
             data-bs-toggle="modal" data-bs-target="#deleteValidasi">
             <i class="fa fa-times"></i>
         </button>';
+            } else if ($user_role === "Super User" && $item->source_table != 'mv') {
+                $button .= '
+                <button class="btn btn-link btn-danger btn-lg" onclick="deleteValidasiBackup(
+                    \'' . addslashes(trim($item->id_courier)) . '\',
+                    \'' . addslashes(trim($item->id_checker)) . '\',
+                    \'' . addslashes(trim($item->create_date)) . '\',
+                    \'' . addslashes(trim($item->runsheet_date)) . '\',
+                    \'' . addslashes(trim($item->courier_name)) . '\')"
+                    data-bs-toggle="modal" data-bs-target="#deleteValidasiBackup">
+                    <i class="fa fa-times"></i>
+                </button>';
             }
 
             $button .= '</div>';
@@ -223,6 +332,91 @@ class Admin extends CI_Controller
         );
         echo json_encode($output);
     }
+    public function getdatatable_not_approve()
+    {
+        $user_role = $this->session->userdata('role');
+        $list = $this->Checker_model->getdatatable_not_approve();
+        $data = array();
+        $no = $this->input->post('start', true);
+        foreach ($list as $item) {
+            $zone = $item->zone;
+            $persentase_progres = ($item->success_pod / ($item->success_pod + $item->in_progress_pod)) * 100;
+
+            $no++;
+            $row = array();
+            $row[] = '<small style="font-size:12px">' . $no . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->id_courier) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->courier_name) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->qty_awb) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->qty_sesuai) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->qty_tidak_sesuai) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->qty_revisi) . '</small>';
+            $row[] = '<b style="font-size:12px">' . htmlspecialchars($item->success_pod) . ' / ' . htmlspecialchars($item->in_progress_pod) . '</b>
+            <br>
+            <div class="progress">
+                <div class="progress-bar progress-bar-striped" style="width:' . $persentase_progres . '%">' . number_format($persentase_progres, 1) . '%</div>
+            </div>
+            ';
+            // $date_only = date('Y-m-d', strtotime($runsheet_date));
+            $row[] = '<small style="font-size:12px">' . date('Y-m-d', strtotime($item->runsheet_date)) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->name) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($zone) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($this->Checker_model->get_zone_name($item->zone)) . '</small>';
+
+            $button = ' <div class="form-button-action"> ';
+
+            
+            if ($item->source_table === 'mv') {
+                $button .= '
+        <a href="' . base_url('admin/detail/' . urlencode(base64_encode($item->id_courier)) . '/' . urlencode(base64_encode($item->runsheet_date)) . '/' . urlencode(base64_encode(isset($item->status_pod) ? $item->status_pod : "T")). '/' . urlencode(base64_encode(isset($item->no_runsheet) ? $item->no_runsheet : "N"))) . '" 
+            class="btn btn-dark waves-effect waves-light btn-sm me-1" 
+            title="Detail" data-plugin="tippy" data-tippy-placement="top">
+            <i class="fa fa-info-circle"> Detail</i>
+        </a>';
+
+            }
+
+
+            if ($user_role === "Super User" && $item->source_table === 'mv') {
+
+                $button .= '
+        <button class="btn btn-link btn-danger btn-lg" onclick="deleteValidasi(
+            \'' . addslashes(trim($item->id_courier)) . '\',
+            \'' . addslashes(trim($item->id_checker)) . '\',
+            \'' . addslashes(trim($item->create_date)) . '\',
+            \'' . addslashes(trim($item->runsheet_date)) . '\',
+            \'' . addslashes(trim($item->courier_name)) . '\')"
+            data-bs-toggle="modal" data-bs-target="#deleteValidasi">
+            <i class="fa fa-times"></i>
+        </button>';
+            } else if ($user_role === "Super User" && $item->source_table != 'mv') {
+                $button .= '
+                <button class="btn btn-link btn-danger btn-lg" onclick="deleteValidasiBackup(
+                    \'' . addslashes(trim($item->id_courier)) . '\',
+                    \'' . addslashes(trim($item->id_checker)) . '\',
+                    \'' . addslashes(trim($item->create_date)) . '\',
+                    \'' . addslashes(trim($item->runsheet_date)) . '\',
+                    \'' . addslashes(trim($item->courier_name)) . '\')"
+                    data-bs-toggle="modal" data-bs-target="#deleteValidasiBackup">
+                    <i class="fa fa-times"></i>
+                </button>';
+            }
+
+            $button .= '</div>';
+
+            $row[] = $button;
+
+
+            $data[] = $row;
+        }
+        $output = array(
+            "draw" => @$_POST['draw'],
+            "recordsTotal" => $this->Checker_model->count_all_not_approve(),
+            "recordsFiltered" => $this->Checker_model->count_filtered_not_approve(),
+            "data" => $data,
+        );
+        echo json_encode($output);
+    }
 
     public function summary_dashboard()
     {
@@ -231,43 +425,51 @@ class Admin extends CI_Controller
         $origin = $this->input->post('origin', TRUE);
         $zone = $this->input->post('zone', TRUE);
 
+        $where = "WHERE create_date BETWEEN ? AND ?";
+        $params = [$dateFrom . ' 00:00:00', $dateThru . ' 23:59:59'];
 
-        $this->db->select('
-        COUNT(*) as totalAwb,          
-        SUM(ch.status_checker = "Sesuai") as approve,
-        SUM(ch.status_checker = "Tidak Sesuai") as notApprove,
-        SUM(ch.status_checker = "Revisi") as revision
-                          
-        ');
-
-        if (!empty($dateFrom) && !empty($dateThru)) {
-            $this->db->where('DATE(ch.create_date) >=', $dateFrom);
-            $this->db->where('DATE(ch.create_date) <=', $dateThru);
+        if (!empty($origin)) {
+            $where .= " AND origin_code = ?";
+            $params[] = $origin;
         }
 
-        $this->db->from('checker ch');
-        $this->db->join('zone z', 'ch.zone = z.zone_code', 'left');
-        if (!empty($origin) && empty($zone)) {
-            $this->db->where('z.origin_code', $origin);
+        if (!empty($zone)) {
+            $where .= " AND zone = ?";
+            $params[] = $zone;
         }
-        if (!empty($origin) && !empty($zone)) {
-            $this->db->where('ch.zone', $zone);
-            $this->db->where('z.origin_code', $origin);
-        }
+        $select_columns = "
+            id_courier, id_checker, runsheet_date, create_date, upload_by,
+            zone, status_checker, qty_awb, qty_sesuai, qty_revisi, qty_tidak_sesuai,
+            courier_name, zone_name, origin_code, role, name, username,
+            'mv' AS source_table
+        ";
 
-        $query = $this->db->get();
+        $sql = "
+            SELECT 
+                SUM(qty_awb) AS totalAwb,
+                SUM(qty_sesuai) AS approve,
+                SUM(qty_tidak_sesuai) AS notApprove,
+                SUM(qty_revisi) AS revision
+            FROM (
+                SELECT $select_columns FROM mv_checker_summary $where
+                UNION ALL
+                SELECT $select_columns FROM summary_checker $where
+            ) AS combined
+        ";
+
+        // Gabung parameter dua kali karena dipakai di dua bagian UNION
+        $finalParams = array_merge($params, $params);
+        $query = $this->db->query($sql, $finalParams);
         $result = $query->row();
 
         echo json_encode([
-            'totalAwb' => htmlspecialchars($result->totalAwb),
-            'approve' => htmlspecialchars($result->approve),
-            'notApprove' => htmlspecialchars($result->notApprove),
-            'revision' => htmlspecialchars($result->revision),
-
-
+            'totalAwb' => (int) $result->totalAwb,
+            'approve' => (int) $result->approve,
+            'notApprove' => (int) $result->notApprove,
+            'revision' => (int) $result->revision
         ]);
-
     }
+
 
     public function getSourceData()
     {
@@ -332,12 +534,42 @@ class Admin extends CI_Controller
         ]);
     }
 
-// cbug di hapus url revision
+    // cbug di hapus url revision
+    public function delete_validasi_backup()
+    {
+        $id_courier = $this->input->post('id_courrier_delete_backup');
+        $runsheet_date = $this->input->post('runsheet_date_delete_backup');
+        // $create_date = $this->input->post('create_date_delete');
+
+        if ($this->Upload_model->delete_validasi_backup($id_courier, $runsheet_date)) {
+            $this->session->set_flashdata('notify', [
+                'message' => 'Validasi berhasil dihapus!',
+                'type' => 'success'
+            ]);
+        } else {
+            $this->session->set_flashdata('notify', [
+                'message' => 'Gagal hapus Validasi!',
+                'type' => 'warning'
+            ]);
+        }
+        // Refresh materialize
+        $this->Checker_model->refresh_mv_checker_summary();
+        // $date_only = date('Y-m-d', strtotime($runsheet_date));
+
+        // var_dump($id_courier, $date_only);
+        redirect('admin');
+    }
+
+    public function refresh_leaderboard(){
+        $this->Leaderboard_model->refresh_mv_leaderboard_summary();
+        redirect('admin');
+    }
     public function delete_validasi()
     {
         $id_courier = $this->input->post('id_courrier_delete');
         $runsheet_date = $this->input->post('runsheet_date_delete');
-        // $create_date = $this->input->post('create_date_delete');
+        $no_runsheet = $this->input->post('no_runsheet_delete');        
+        
 
         if ($this->Upload_model->delete_validasi($id_courier, $runsheet_date)) {
 
@@ -376,10 +608,34 @@ class Admin extends CI_Controller
                 }
             }
 
-            $this->session->set_flashdata('notify', [
-                'message' => 'Validasi berhasil dihapus!',
-                'type' => 'success'
-            ]);
+            $this->Checker_model->refresh_mv_checker_summary();
+            
+            if($this->Leaderboard_model->delete_leaderboard($no_runsheet)){
+                
+                $this->session->set_flashdata('notify', [
+                    'message' => 'Data Validasi berhasil dihapus!',
+                    'type' => 'success'
+                ]);
+            }else{
+                $this->session->set_flashdata('notify', [
+                    'message' => 'Gagal hapus poin Leaderboard!',
+                    'type' => 'warning'
+                ]);
+            }
+            if($this->Leaderboard_model->delete_checker_notes($no_runsheet)){
+                
+                $this->session->set_flashdata('notify', [
+                    'message' => 'Data Validasi berhasil dihapus!',
+                    'type' => 'success'
+                ]);
+            }else{
+                $this->session->set_flashdata('notify', [
+                    'message' => 'Gagal hapus Cod Paid!',
+                    'type' => 'warning'
+                ]);
+            }
+            $this->Leaderboard_model->refresh_mv_leaderboard_summary();
+
         } else {
             $this->session->set_flashdata('notify', [
                 'message' => 'Gagal hapus Validasi!',
@@ -387,11 +643,7 @@ class Admin extends CI_Controller
             ]);
         }
 
-        // Refresh materialize
-        $this->Checker_model->refresh_mv_checker_summary();
-        // $date_only = date('Y-m-d', strtotime($runsheet_date));
-
-        // var_dump($id_courier, $date_only);
+      
         redirect('admin');
     }
 
@@ -441,13 +693,16 @@ class Admin extends CI_Controller
         echo json_encode($data);
     }
 
-    public function backup_data(){
+    public function backup_data()
+    {
         $this->Checker_model->backup_and_cleanup_checker();
         $this->Checker_model->refresh_mv_checker_summary();
 
         redirect('admin/');
     }
-    public function refresh_db(){        
+    public function refresh_db()
+    {
+
         $this->Checker_model->refresh_mv_checker_summary();
 
         redirect('admin/');
