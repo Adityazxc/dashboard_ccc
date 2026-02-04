@@ -2,8 +2,8 @@
 defined('BASEPATH') or exit('No direct script access allowed');
 class Courier_model extends CI_Model
 {
-    var $customer_column_order = array(null, 'id_courier', 'courier_name', 'nik', 'tipe_courier', "location", "area", null); //set column field database for datatable orderable
-    var $customer_column_search = array('id_courier', 'courier_name', 'nik', 'tipe_courier', "location", "area"); //set column field database for datatable searchable
+    var $customer_column_order = array(null, null,'id_courier', 'courier_name', 'nik', 'tipe_courier', "location", "area", null,null,"work_zone"); //set column field database for datatable orderable
+    var $customer_column_search = array('id_courier', 'courier_name', 'nik', 'tipe_courier', "location", "area","work_zone"); //set column field database for datatable searchable
     var $customer_order = array('id' => 'DESC');
     public function get_user_details($id)
     {
@@ -108,11 +108,31 @@ class Courier_model extends CI_Model
 
     function edit_courier($user_data, $id)
     {
-
         $this->db->where('id', $id);
         $this->db->update('courier', $user_data);
-        return $this->db->affected_rows() > 0;
+    
+        // ❌ query error
+        if ($this->db->error()['code'] != 0) {
+            return [
+                'status' => false,
+                'error'  => $this->db->error()['message']
+            ];
+        }
+    
+        // ⚠️ tidak ada data berubah
+        if ($this->db->affected_rows() == 0) {
+            return [
+                'status' => false,
+                'error'  => 'Tidak ada data yang berubah'
+            ];
+        }
+    
+        // ✅ sukses
+        return [
+            'status' => true
+        ];
     }
+    
     function search_courier($id_courier)
     {
         $this->db->from('courier');
@@ -150,5 +170,16 @@ class Courier_model extends CI_Model
         }, $result);
 
         return json_encode($data_courier); // Encode ke JSON string
+    }
+
+
+    public function get_by_id($id_courier)
+    {
+        return $this->db->get_where('courier', ['id_courier' => $id_courier])->row();
+    }
+    
+    public function get_all()
+    {
+        return $this->db->get('courier')->result_array();
     }
 }

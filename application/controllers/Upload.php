@@ -43,485 +43,190 @@ class Upload extends CI_Controller
         exit;
     }
 
-    // public function imporzt_data()
-    // {
-    //     $upload_by = $this->session->userdata('id_user');
-    //     // return var_dump($id_user);
-    //     $this->load->library('upload');
-    //     $this->load->model('Checker_model');
-
-    //     $this->upload->initialize([
-    //         'upload_path' => './uploads/excel', // Sesuaikan dengan path
-    //         'allowed_types' => 'xlsx|xls|csv',
-    //         'encrypt_name' => TRUE,
-    //     ]);
-
-    //     $batch_data = []; // Inisialisasi array batch data
-    //     $duplicate_awb = []; // Array untuk menyimpan AWB yang duplikat
-
-    //     $awb_seen_in_file = []; // Tambahkan ini sebelum foreach
-    //     $duplicate_awb_excel = []; // AWB duplikat di dalam file Excel itu sendiri
-
-    //     if ($this->upload->do_upload('excel_file')) {
-    //         $data = $this->upload->data();
-    //         $file_path = $data['full_path'];
-
-    //         // Menggunakan library PhpSpreadsheet
-    //         $spreadsheet = IOFactory::load($file_path);
-    //         $sheetData = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
-
-    //         unset($sheetData[1]); // Hapus header
-
-    //         // Pastikan folder penyimpanan gambar ada
-    //         $upload_path = FCPATH . 'uploads/images/';
-    //         $upload_pod_path = FCPATH . 'uploads/images_pod/';
-    //         if (!is_dir($upload_path))
-    //             mkdir($upload_path, 0777, true);
-    //         if (!is_dir($upload_pod_path))
-    //             mkdir($upload_pod_path, 0777, true);
-
-    //         $courier_stats = []; // Data untuk akumulasi per kurir
-
-    //         foreach ($sheetData as $row) {
-    //             $address = $row['J'] . ' ' . $row['K'];
-    //             $lat = $row['Z'];
-    //             $lon = $row['AA'];
-    //             $awb = $row['B'];
-    //             $status_code = $row['V'];
-    //             $runsheet = $row['C'];
-    //             $link_maps = 'https://www.google.com/maps?q=' . $lat . ',' . $lon;
-    //             $id_courier = $row['E'];
-
-    //             // Cek duplikat AWB dalam file Excel itu sendiri
-    //             if (in_array($awb, $awb_seen_in_file)) {
-    //                 $duplicate_awb_excel[] = $awb;
-    //                 continue;
-    //             }
-    //             $awb_seen_in_file[] = $awb;
-
-    //             //tambahan ini mah
-    //             $clean_code = preg_replace('/[[:^print:]]/', '', $status_code);
-    //             $clean_code = trim($clean_code);
-
-    //             // Inisialisasi statistik kurir jika belum ada
-    //             if (!isset($courier_stats[$id_courier])) {
-    //                 $courier_stats[$id_courier] = [
-    //                     'total_awb' => 0,
-    //                     'success_count' => 0
-    //                 ];
-    //             }
-
-    //             $courier_stats[$id_courier]['total_awb']++;
-
-    //             // Cek hanya jika status_code tidak kosong
-    //             if (!empty($clean_code) && preg_match('/^d/i', $clean_code)) {
-    //                 $courier_stats[$id_courier]['success_count']++;
-    //             }
-    //             //end tambahan
-
-
-
-    //             $this->db->where('awb', $awb);
-    //             $this->db->where('no_runsheet', $runsheet);
-    //             $this->db->where('status_cod IS NULL', null, false);
-    //             $this->db->delete('checker');
-
-    //             if (empty($photo_url) && empty($photo_pod_url)) {
-    //                 $photo_url = 'public/img/Image-not-found.png';
-    //                 $photo_pod_url = 'public/img/Image-not-found.png';
-    //             } else if (empty($photo_url) && !empty($photo_pod_url)) {
-    //                 $photo_url = 'public/img/Image-not-found.png';
-    //                 $photo_pod_url = $row['AD'];
-
-    //             } else if (!empty($photo_url) && empty($photo_pod_url)) {
-    //                 $photo_pod_url = 'public/img/Image-not-found.png';
-    //                 $photo_url = $row['AB'];
-
-
-    //             } else {
-    //                 $photo_pod_url = $row['AD'];
-    //                 $photo_url = $row['AB'];
-    //             }
-
-    //             // Handle foto kosong
-    //             // $photo_url = $photo_url ?: 'public/img/Image-not-found.png';
-    //             // $photo_pod_url = $photo_pod_url ?: 'public/img/Image-not-found.png';
-
-    //             //cek awb duplikat
-    //             if ($this->Checker_model->_duplicat_awb($awb)) {
-    //                 $duplicate_awb[] = $awb;
-    //                 continue;
-    //             }
-    //             if (empty($id_courier)) {
-    //                 continue;
-    //             }
-
-    //             // Hitung data per kurir
-    //             if (!isset($courier_stats[$id_courier])) {
-    //                 $courier_stats[$id_courier] = [
-    //                     'total_awb' => 0,
-    //                     'success_rate' => 0,
-    //                 ];
-    //             }
-
-
-
-    //             // Tambahkan data ke batch array
-    //             $batch_data[] = [
-    //                 'awb' => $awb,
-    //                 'no_runsheet' => $row['C'],
-    //                 'id_courier' => $id_courier,
-    //                 'destination_code' => $row['G'],
-    //                 'receiver_name' => $row['I'],
-    //                 'receiver_address' => $address,
-    //                 'receiver_city' => $row['L'],
-    //                 'qty' => $row['M'],
-    //                 'weight' => $row['N'],
-    //                 'service' => $row['O'],
-    //                 'paymeny_type' => $row['Q'],
-    //                 'amount' => $row['R'],
-    //                 'runsheet_date' => $row['T'],
-    //                 'received_date' => $row['U'],
-    //                 'status_cod' => $status_code,
-    //                 'remarks' => $row['W'],
-    //                 'link_maps' => $link_maps,
-    //                 'url_photo' => $photo_url,
-    //                 'url_pod' => $photo_pod_url,
-    //                 'zone' => $row['AH'],
-    //                 'no_hrs' => $row['AI'],
-    //                 'hrs_date' => $row['AJ'],
-    //                 'status_checker' => "Sesuai",
-    //                 'create_date' => date('Y-m-d H:i:s'),
-    //                 'upload_by' => $upload_by,
-    //                 'status_via' => $row['Y'],
-    //                 'id_customers' => $row['D'],
-    //             ];
-    //         }
-
-    //         // ✅ Jika ada duplikat di Excel
-    //         if (!empty($duplicate_awb_excel)) {
-    //             $this->session->set_flashdata('notify', [
-    //                 'message' => 'Terdapat AWB yang duplikat di dalam file Excel!',
-    //                 'type' => 'danger'
-    //             ]);
-    //             $this->session->set_flashdata('error_duplicate_awb_excel', implode(', ', $duplicate_awb_excel));
-    //         }
-
-
-    //         // Set flashdata untuk error duplikat
-    //         if (!empty($duplicate_awb)) {
-    //             $this->session->set_flashdata('notify', [
-    //                 'message' => 'Terdapat awb yang duplikat',
-    //                 'type' => 'danger'
-    //             ]);
-    //             $this->session->set_flashdata('error_duplicate_awb', 'Terdapat awb yang duplikat');
-    //         }
-    //         try {
-    //             // Jika ada data, lakukan batch insert ke database
-    //             if (!empty($batch_data)) {
-    //                 foreach ($courier_stats as $id_courier => $stat) {
-    //                     $total_awb = $stat['total_awb'];
-    //                     $success_count = $stat['success_count'];
-    //                     // KPI (80)
-    //                     $kpi_point = ($total_awb > 80) ? 20 : (($total_awb < 80) ? -10 : 0);
-
-    //                     // Success rate
-    //                     $success_rate = $total_awb > 0 ? ($success_count / $total_awb) * 100 : 0;
-
-    //                     // KPI (80)
-    //                     $kpi_point = ($total_awb > 80) ? 20 : (($total_awb < 80) ? -10 : 0);
-
-    //                     // Success rate point
-    //                     if ($success_rate > 99) {
-    //                         $success_point = 20;
-    //                     } elseif ($success_rate < 99) {
-    //                         $success_point = -10;
-    //                     } else {
-    //                         $success_point = 0;
-    //                     }
-
-    //                     // Simpan ke leaderboard
-    //                     $this->db->insert('leaderboard', [
-    //                         'id_courier' => $id_courier,
-    //                         'kpi' => $kpi_point,
-    //                         'succes_rate' => $success_point,
-    //                         'hrs' => 0,
-    //                         'total_poin' => 0,
-    //                         'photo_pod' => 0,
-    //                         'leaderboard_month' => date('n'),
-    //                         'leaderboard_year' => date('Y')
-    //                     ]);
-    //                     // Contoh debugging output
-    //                     // echo "Courier ID: $id_courier<br>";
-    //                     // echo "Total AWB: $total_awb<br>";
-    //                     // echo "Success (D..): $success_count<br>";
-    //                     // echo "Success Rate: $success_rate%<br><br>";
-    //                 }
-    //                 $this->Leaderboard_model->refresh_total_poin();
-
-    //                 $this->Checker_model->_add_checker($batch_data);
-    //                 $this->session->set_flashdata('notify', [
-    //                     'message' => 'File berhasil diunggah dan data berhasil ditambahkan.',
-    //                     'type' => 'success'
-    //                 ]);
-
-    //             }
-    //         } catch (Exception $e) {
-    //             // ✅ Ini menampilkan error asli dari PHP/library
-    //             $this->session->set_flashdata('notify', [
-    //                 'message' => 'Terjadi kesalahan saat mengimpor file: ' . $e->getMessage(),
-    //                 'type' => 'danger'
-    //             ]);
-    //         }
-
-    //         // Refresh materialize
-    //         $this->Checker_model->refresh_mv_checker_summary();
-    //         redirect('admin');
-
-    //     } else {
-    //         $this->session->set_flashdata('notify', [
-    //             'message' => 'File gagal diunggah, file harus berformat excel!',
-    //             'type' => 'warning'
-    //         ]);
-    //         redirect('admin');
-    //     }
-    // }
-
-
-
     public function import_data()
-    {
-        $upload_by = $this->session->userdata('id_user');
-        // return var_dump($id_user);
-        $this->load->library('upload');
-        $this->load->model('Checker_model');
+{
+    $upload_by = $this->session->userdata('id_user');
+    $this->load->library('upload');
+    $this->load->model('Checker_model');
+    $this->load->model('Leaderboard_model');
+    
+    ini_set('memory_limit', '2G');
+    ini_set('max_execution_time', 1800);
+    
+    $this->upload->initialize([
+        'upload_path' => './uploads/excel',
+        'allowed_types' => 'xlsx|xls|csv',
+        'encrypt_name' => TRUE,
+    ]);
 
-        $this->upload->initialize([
-            'upload_path' => './uploads/excel', // Sesuaikan dengan path
-            'allowed_types' => 'xlsx|xls|csv',
-            'encrypt_name' => TRUE,
+    if (!$this->upload->do_upload('excel_file')) {
+        $this->session->set_flashdata('notify', [
+            'message' => 'File gagal diunggah!',
+            'type' => 'warning'
         ]);
+        redirect('admin');
+    }
 
-        $batch_data = []; // Inisialisasi array batch data
-        $duplicate_awb = []; // Array untuk menyimpan AWB yang duplikat
+    $data = $this->upload->data();
+    $file_path = $data['full_path'];
+    $start_time = microtime(true);
 
-        if ($this->upload->do_upload('excel_file')) {
-            $data = $this->upload->data();
-            $file_path = $data['full_path'];
+    $spreadsheet = IOFactory::load($file_path);
+    $sheetData = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
+    unset($sheetData[1]);
+    
+    $chunk_size = 2000;
+    $temp_batch = [];
+    $duplicate_count = 0; // Track duplikat
+    
+    $this->db->query('SET autocommit=0');
+    $this->db->trans_start();
 
-            // Menggunakan library PhpSpreadsheet
-            $spreadsheet = IOFactory::load($file_path);
-            $sheetData = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
-
-            unset($sheetData[1]); // Hapus header
-
-            // Pastikan folder penyimpanan gambar ada
-            $upload_path = FCPATH . 'uploads/images/';
-            $upload_pod_path = FCPATH . 'uploads/images_pod/';
-            if (!is_dir($upload_path))
-                mkdir($upload_path, 0777, true);
-            if (!is_dir($upload_pod_path))
-                mkdir($upload_pod_path, 0777, true);
-
-            $courier_stats = []; // Data untuk akumulasi per kurir
-
-            foreach ($sheetData as $row) {
-                $address = $row['J'] . ' ' . $row['K'];
-                $lat = $row['Z'];
-                $lon = $row['AA'];
-                $awb = $row['B'];
-                $status_code = $row['V'];
-                $runsheet = $row['C'];
-                $link_maps = 'https://www.google.com/maps?q=' . $lat . ',' . $lon;
-                $id_courier = $row['E'];
-
-
-                //tambahan ini mah
-                $clean_code = preg_replace('/[[:^print:]]/', '', $status_code);
-                $clean_code = trim($clean_code);
-
-                // Inisialisasi statistik kurir jika belum ada
-                if (!isset($courier_stats[$id_courier])) {
-                    $courier_stats[$id_courier] = [
-                        'total_awb' => 0,
-                        'success_count' => 0
-                    ];
-                }
-
-                $courier_stats[$id_courier]['total_awb']++;
-
-                // Cek hanya jika status_code tidak kosong
-                if (!empty($clean_code) && preg_match('/^d/i', $clean_code)) {
-                    $courier_stats[$id_courier]['success_count']++;
-                }
-                //end tambahan
-
-                $hehe[] = $row['V'];
-
-                $this->db->where('awb', $awb);
-                $this->db->where('no_runsheet', $runsheet);
-                $this->db->where('status_cod IS NULL', null, false);
-                $this->db->delete('checker');
-
-                // Atur nilai default
-                $default_image = 'public/img/Image-not-found.png';
-
-                $photo_url = !empty($row['AB']) ? $row['AB'] : $default_image;
-                $photo_pod_url = !empty($row['AD']) ? $row['AD'] : $default_image;
-
+    foreach ($sheetData as $row) {
+        $awb = trim($row['B']);
+        if (empty($awb)) continue;       
         
+        
+        $awb = ltrim($awb, "'\"");
 
-                //cek awb duplikat
-                if ($this->Checker_model->_duplicat_awb($awb)) {
-                    $duplicate_awb[] = $awb;
-                    continue;
-                }
-                if (empty($id_courier)) {
-                    continue;
-                }
+        $id_courier = $row['E'];
+        if (empty($id_courier)) continue;
 
-                // Hitung data per kurir
-                if (!isset($courier_stats[$id_courier])) {
-                    $courier_stats[$id_courier] = [
-                        'total_awb' => 0,
-                        'success_rate' => 0,
-                    ];
-                }
+        $raw_status = trim(preg_replace('/[[:^print:]]/', '', $row['V']));
+        $status_cod = ($raw_status === '') ? NULL : $raw_status;
 
-   
+        $address = preg_replace("/\s+/", " ", trim($row['J'] . ' ' . $row['K']));
 
-                // Tambahkan data ke batch array
-                $batch_data[] = [
-                    'awb' => $awb,
-                    'no_runsheet' => $runsheet,
-                    'id_courier' => $id_courier,
-                    'destination_code' => $row['G'],
-                    'receiver_name' => $row['I'],
-                    'receiver_address' => $address,
-                    'receiver_city' => $row['L'],
-                    'qty' => $row['M'],
-                    'weight' => $row['N'],
-                    'service' => $row['O'],
-                    'paymeny_type' => $row['Q'],
-                    'amount' => $row['R'],
-                    'runsheet_date' => $this->normalizeDate($row['T']),
-                    'received_date' => $this->normalizeDate($row['U']),                    
-                    'status_cod' => $status_code,
-                    'remarks' => $row['W'],
-                    'link_maps' => $link_maps,
-                    'url_photo' => $photo_url,
-                    'url_pod' => $photo_pod_url,
-                    'zone' => $row['AH'],
-                    'no_hrs' => $row['AI'],
-                    'hrs_date' => $this->normalizeDate($row['AJ']), 
-                    'status_checker' => "Sesuai",
-                    'create_date' => date('Y-m-d H:i:s'),
-                    'upload_by' => $upload_by,
-                    'status_via' => $row['Y'],
-                    'id_customers' => $row['D'],
-                ];
-            }
-            // Set flashdata untuk error duplikat
-            if (!empty($duplicate_awb)) {
-                $this->session->set_flashdata('notify', [
-                    'message' => 'Terdapat awb yang duplikat',
-                    'type' => 'danger'
-                ]);
-                $this->session->set_flashdata('error_duplicate_awb', 'Terdapat awb yang duplikat');
-            }
-            try {
-                // Jika ada data, lakukan batch insert ke database
-                if (!empty($batch_data)) {
-                    foreach ($courier_stats as $id_courier => $stat) {
-                        $total_awb = $stat['total_awb'];
-                        $success_count = $stat['success_count'];
-                        // KPI (80)
-                        $kpi_point = ($total_awb > 80) ? 20 : (($total_awb < 80) ? -10 : 0);
+        $link_maps = 'https://www.google.com/maps?q=' . $row['Z'] . ',' . $row['AA'];
+        $default_image = 'public/img/Image-not-found.png';
+        $photo_url = !empty($row['AB']) ? $row['AB'] : $default_image;
+        $photo_pod_url = !empty($row['AD']) ? $row['AD'] : $default_image;
 
-                        // Success rate
-                        $success_rate = $total_awb > 0 ? ($success_count / $total_awb) * 100 : 0;
+        $temp_batch[$awb] = [
+            'awb' => $awb,
+            'no_runsheet' => $row['C'],
+            'id_courier' => $id_courier,
+            'destination_code' => $row['G'],
+            'receiver_name' => $row['I'],
+            'receiver_address' => $address,
+            'receiver_city' => $row['L'],
+            'qty' => (int)$row['M'],
+            'weight' => (float)$row['N'],
+            'service' => $row['O'],
+            'paymeny_type' => $row['Q'],
+            'amount' => (int)$row['R'],
+            'runsheet_date' => $this->normalizeDate($row['T']),
+            'received_date' => $this->normalizeDate($row['U']),
+            'status_cod' => $status_cod,
+            'remarks' => $row['W'],
+            'link_maps' => $link_maps,
+            'url_photo' => $photo_url,
+            'url_pod' => $photo_pod_url,
+            'zone' => $row['AN'],
+            'no_hrs' => $row['AO'] ?: NULL,
+            'hrs_date' => $this->normalizeDate($row['AP']),
+            'status_checker' => 'Sesuai',
+            'create_date' => date('Y-m-d H:i:s'),
+            'upload_by' => $upload_by,
+            'status_via' => $row['Y'],
+            'id_customers' => $row['D'],
+        ];
 
-                        // KPI (80)
-                        $kpi_point = ($total_awb > 80) ? 20 : (($total_awb < 80) ? -10 : 0);
-
-                        // Success rate point
-                        if ($success_rate > 99) {
-                            $success_point = 20;
-                        } elseif ($success_rate < 99) {
-                            $success_point = -10;
-                        } else {
-                            $success_point = 0;
-                        }
-
-                        // Simpan ke leaderboard
-                        $this->db->insert('leaderboard', [
-                            'id_courier' => $id_courier,
-                            'kpi' => $kpi_point,
-                            'succes_rate' => $success_point,
-                            'hrs' => 0,
-                            'total_poin' => 0,
-                            'photo_pod' => 0,
-                            'minus_poin' => 0,
-                            'no_runsheet' => $runsheet,
-                        ]);
-
-                    }
-                    $this->Leaderboard_model->refresh_total_poin($runsheet);
-                    $this->Leaderboard_model->refresh_mv_leaderboard_summary();
-
-                    $this->Checker_model->_add_checker($batch_data);
-                    $this->session->set_flashdata('notify', [
-                        'message' => 'File berhasil diunggah dan data berhasil ditambahkan.',
-                        'type' => 'success'
-                    ]);
-
-                }
-            } catch (Exception $e) {
-                // ✅ Ini menampilkan error asli dari PHP/library
-                $this->session->set_flashdata('notify', [
-                    'message' => 'Terjadi kesalahan saat mengimpor file: ' . $e->getMessage(),
-                    'type' => 'danger'
-                ]);
-            }
-
-            // Refresh materialize
-            $this->Checker_model->refresh_mv_checker_summary();
-            redirect('admin');
-
-        } else {
-            $this->session->set_flashdata('notify', [
-                'message' => 'File gagal diunggah, file harus berformat excel!',
-                'type' => 'warning'
-            ]);
-            redirect('admin');
+        if (count($temp_batch) >= $chunk_size) {
+            $this->_rewrite_and_insert_optimized($temp_batch);
+            $temp_batch = [];
         }
     }
 
-    function normalizeDate($input) {
+    if (!empty($temp_batch)) {
+        $this->_rewrite_and_insert_optimized($temp_batch);
+    }
+    
+    $this->db->trans_complete();
+    $this->db->query('SET autocommit=1');
+    
+    $import_time = microtime(true) - $start_time;
+    
+    // Refresh MV
+    $refresh_start = microtime(true);
+    $this->Checker_model->refresh_mv_checker_summary();
+    $this->Leaderboard_model->refresh_mv_leaderboard_summary();
+    
+    // CALCULATE LEADERBOARD POINTS
+    $this->Leaderboard_model->calculate_and_insert_leaderboard();
+    
+    $refresh_time = microtime(true) - $refresh_start;
+    $total_time = microtime(true) - $start_time;
+
+    $this->session->set_flashdata('notify', [
+        'message' => sprintf(
+            'Import: %.1fs | MV: %.1fs | Total: %.1fs | Duplikat skip: %d',
+            $import_time, $refresh_time, $total_time, $duplicate_count
+        ),
+        'type' => 'success'
+    ]);
+
+    redirect('admin');
+}
+
+private function _rewrite_and_insert_optimized($batch)
+{
+    if (empty($batch)) return;
+    
+    $awb_list = array_keys($batch);
+    
+    // Temp table strategy
+    $this->db->query("CREATE TEMPORARY TABLE temp_awb_delete (awb VARCHAR(255) PRIMARY KEY)");
+    
+    $values = [];
+    foreach ($awb_list as $awb) {
+        $values[] = "(" . $this->db->escape($awb) . ")";
+    }
+    
+    $chunks = array_chunk($values, 5000);
+    foreach ($chunks as $chunk) {
+        $this->db->query("INSERT INTO temp_awb_delete VALUES " . implode(',', $chunk));
+    }
+    
+    $this->db->query("
+        DELETE c FROM checker c
+        INNER JOIN temp_awb_delete t ON c.awb = t.awb
+        WHERE c.status_cod IS NULL OR c.status_cod = ''
+    ");
+    
+    $this->db->query("DROP TEMPORARY TABLE temp_awb_delete");
+    
+    $this->Checker_model->_add_checker($batch);
+}
+
+
+
+    function normalizeDate($input)
+    {
         $formats = [
             'd/m/Y H:i',
             'Y-m-d H:i:s',
             'm/d/Y h:i A',
             'd-m-Y H:i',
         ];
-    
+
         foreach ($formats as $format) {
             $dt = DateTime::createFromFormat($format, $input);
             if ($dt && $dt->format($format) === $input) {
                 return $dt->format('Y-m-d H:i:s');
             }
         }
-    
+
         // Coba parse sebagai Excel float date (misal: 45156.739)
         if (is_numeric($input)) {
             // Excel date base: 1899-12-30
             $timestamp = ($input - 25569) * 86400; // 25569 = days since 1899-12-30 to 1970-01-01
             return date('Y-m-d H:i:s', $timestamp);
         }
-    
+
         return null; // Gagal parsing
     }
-    
+
 
     public function revision()
     {
@@ -538,7 +243,8 @@ class Upload extends CI_Controller
             $config['upload_path'] = './uploads/images_revision/';
             $config['allowed_types'] = 'jpg|jpeg|png|gif';
             $config['max_size'] = 10048; // dalam KB (10MB)
-            $config['file_name'] = 'revision_' . time();
+            $config['file_name'] = 'revision_' . $awb . '_' . date('Y-m-d_H-i-s');
+
 
             $this->load->library('upload', $config);
 

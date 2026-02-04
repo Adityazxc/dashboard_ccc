@@ -29,6 +29,7 @@
     });
 </script>
 
+
 	<!-- Menambahkan Font Awesome via CDN -->
 
 
@@ -79,6 +80,9 @@
 					|| $role == "Kepala Cabang"
 					|| $role == "PAO"
 					|| $role == "BBP"
+					|| $role == "POD"
+					|| $role == "Admin BDO2"
+					|| $role == "Koordinator BDO2"
 				): ?>
 					<!-- Jika password tidak cocok, nonaktifkan link -->
 					<li class="nav-item <?php echo ($this->uri->segment(1) == 'dashboard') ? 'active' : ''; ?>">
@@ -106,6 +110,8 @@
 							<span>Peyetoran POD</span>
 						</a>
 					</li> -->
+					<?php endif; ?>
+					<?php if ($role == "Super User" || $role == "POD"  || $role == "Admin BDO2"|| $role == "Koordinator BDO2" || $role =="Kepala Cabang BDO2" || $role =="Kepala Cabang"): ?>
 
 					<li class="nav-item  <?php echo ($this->uri->segment(1) == 'pod') ? 'active' : ''; ?>">
 						<a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse"
@@ -138,7 +144,7 @@
 							</ul>
 						</div>
 					</li>
-				<?php endif; ?>
+					<?php endif; ?>
 				<?php if ($role == "Super User" || $role == "HC"): ?>
 					<li
 						class="nav-item <?php echo ($this->uri->segment(1) == 'courier' && $this->uri->segment(2) == '') ? 'active' : ''; ?>">

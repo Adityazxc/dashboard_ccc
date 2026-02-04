@@ -7,149 +7,80 @@ class Leaderboard_model extends CI_Model
     var $checker_column_search = array("c.id_courier", "c.courier_name", "c.zone"); //set column field database for datatable orderable
 
     
-    // private function _get_datatables_top_courier()
-    // {
 
-    //     $dateFrom = $this->input->post('dateFrom');
-    //     $origin = $this->input->post('origin');
-
-    //     $bulan = date('m', strtotime($dateFrom));
-    //     $tahun = date('Y', strtotime($dateFrom));
-
-    //     $this->db->select('
-    //         c.courier_name,
-    //         c.id_courier,
-    //         l.kpi,
-    //         l.hrs,
-    //         l.total_poin,
-    //         l.succes_rate,
-    //         l.minus_poin,
-    //         m.qty_sesuai,
-    //         m.qty_revisi,
-    //         m.qty_awb,
-    //         m.runsheet_date,            
-    //         z.zone
-    //     ');
-    //     $this->db->from('mv_leaderboard_summary l');
-    //     $this->db->join('courier c', 'c.id_courier = l.id_courier', 'left');
-    //     $this->db->join('mv_checker_summary m', 'm.id_courier = l.id_courier ');
-    //     $this->db->join('zone z', 'm.zone = z.zone_code', 'left');
-    //     $this->db->order_by('l.total_poin', 'DESC');
-
-
-    //     $this->db->where('m.leaderboard_month', $bulan);
-    //     $this->db->where('m.leaderboard_year', $tahun);
-
-    //     if (!empty($origin)) {
-    //         $this->db->where('z.origin_code', $origin);
-    //     }
-        
-    //     $this->db->where('c.id_courier IS NOT NULL');
-    //     $this->db->where('c.id_courier !=', '');
-        
-
-    //     $i = 0;
-
-    //     if (@$_POST['search']['value']) {
-    //         foreach ($this->checker_column_search as $item) {
-    //             if ($i === 0) {
-    //                 $this->db->group_start()
-    //                     ->like($item, $_POST['search']['value']);
-    //             } else {
-    //                 $this->db->or_like($item, $_POST['search']['value']);
-    //             }
-    //             if (count($this->checker_column_search) - 1 == $i) {
-    //                 $this->db->group_end();
-    //             }
-    //             $i++;
-    //         }
-    //     }
-
-    //     if (isset($_POST['order'])) {
-    //         $this->db->order_by($this->checker_column_order[$_POST['order']['0']['column']], $_POST['order']['0']['dir']);
-    //     } elseif (isset($this->order)) {
-    //         $checker_order = $this->order;
-    //         $this->db->order_by(key($checker_order), $checker_order[key($checker_order)]);
-    //     }
-    // }
-
-    // function get_datatables_top_courier()
-    // {
-    //     $this->_get_datatables_top_courier();
-    //     if (@$_POST['length'] != -1)
-    //         $this->db->limit(@$_POST['length'], @$_POST['start']);
-    //     $query = $this->db->get();
-    //     return $query->result();
-    // }
-
-    // function count_filtered_top_courier()
-    // {
-    //     $this->_get_datatables_top_courier();
-    //     $query = $this->db->get();
-    //     return $query->num_rows();
-    // }
-
-    // function count_all_top_courier()
-    // {
-
-    //     $this->db->select('*');
-    //     $this->db->from('checker');
-    //     return $this->db->count_all_results();
-    // }
-    function get_datatables_courier($type = 'top')
+public function get_top3_courier($origin = null, $dateFrom = null, $zone = null)
 {
-    $this->_get_datatables_courier($type);
-    if (@$_POST['length'] != -1)
-        $this->db->limit(@$_POST['length'], @$_POST['start']);
-    $query = $this->db->get();
-    return $query->result();
+    if (empty($dateFrom)) {
+        $dateFrom = date('Y-m');
+    }
+
+    $bulan = date('m', strtotime($dateFrom));
+    $tahun = date('Y', strtotime($dateFrom));
+
+    $this->db->select("
+        c.id_courier,
+        c.courier_name,
+        c.tipe_courier,
+        z.zone,
+        SUM(l.total_poin) AS total_poin,
+        SUM(m.qty_awb) AS total_qty_awb,
+        SUM(m.qty_sesuai) AS total_qty_sesuai,
+        SUM(m.qty_revisi) AS total_qty_revisi,
+        MIN(m.runsheet_date) AS first_runsheet
+    ");
+    $this->db->from('mv_leaderboard_summary l');
+    $this->db->join('courier c', 'c.id_courier = l.id_courier', 'left');
+    $this->db->join('mv_checker_summary m', 'm.id_courier = l.id_courier', 'left');
+    $this->db->join('zone z', 'm.zone = z.zone_code', 'left');
+    $this->db->where('m.leaderboard_month', $bulan);
+$this->db->where('m.leaderboard_year', $tahun);
+
+    if (!empty($origin)) {
+        $this->db->where('z.origin_code', $origin);
+    }
+    if (!empty($zone)) {
+        $this->db->where('z.zone_code', $zone);
+    }
+
+    $this->db->group_by('c.id_courier, c.courier_name, z.zone');
+    $this->db->order_by('total_poin DESC, total_qty_awb DESC');
+
+
+    
+    $this->db->limit(3);
+
+    $q = $this->db->get();
+
+    return $q->result();
 }
 
-// $dateFrom = $this->input->post('dateFrom');
-// $origin = $this->input->post('origin');
-
-// $bulan = date('m', strtotime($dateFrom));
-// $tahun = date('Y', strtotime($dateFrom));
-
-// $this->db->select('
-//     c.courier_name,
-//     c.id_courier,
-//     l.kpi,
-//     l.hrs,
-//     l.total_poin,
-//     l.succes_rate,
-//     l.minus_poin,
-//     m.qty_sesuai,
-//     m.qty_revisi,
-//     m.qty_awb,
-//     m.runsheet_date,            
-//     z.zone
-// ');
-// $this->db->from('mv_leaderboard_summary l');
-// $this->db->join('courier c', 'c.id_courier = l.id_courier', 'left');
-// $this->db->join('mv_checker_summary m', 'm.id_courier = l.id_courier');
-// $this->db->join('zone z', 'm.zone = z.zone_code', 'left');
-
-// $this->db->where('m.leaderboard_month', $bulan);
-// $this->db->where('m.leaderboard_year', $tahun);
-// $this->db->where('c.id_courier IS NOT NULL');
-// $this->db->where('c.id_courier !=', '');
-
-// if (!empty($origin)) {
-//     $this->db->where('z.origin_code', $origin);
-// }
 
 
-// // Sorting top/bottom
-// $order = ($type === 'bottom') ? 'ASC' : 'DESC';
-// $this->db->order_by('l.total_poin', $order);
+
+
+
+
+// Ambil mulai dari rank 4 untuk datatables
+public function get_datatables_courier($type = 'top')
+{
+    $this->_get_datatables_courier($type);    
+    $this->db->limit($_POST['length'], $_POST['start'] ); // skip 3 teratas
+    return $this->db->get()->result();
+}
+
 private function _get_datatables_courier($type = 'top')
 {
     $dateFrom = $this->input->post('dateFrom');
 $origin   = $this->input->post('origin');
 
+// Jika kosong → pakai tanggal hari ini
+if (empty($dateFrom)) {
+    $dateFrom = date('Y-m-d');
+}
+
 $bulan = date('m', strtotime($dateFrom));
 $tahun = date('Y', strtotime($dateFrom));
+
 
 $this->db->select('
     c.id_courier,
@@ -170,11 +101,12 @@ $this->db->from('mv_leaderboard_summary l');
 $this->db->join('courier c', 'c.id_courier = l.id_courier', 'left');
 $this->db->join('mv_checker_summary m', 'm.id_courier = l.id_courier');
 $this->db->join('zone z', 'm.zone = z.zone_code', 'left');
+$this->db->order_by('total_poin', 'DESC');
 
-// $this->db->where('m.leaderboard_month', $bulan);
-// $this->db->where('m.leaderboard_year', $tahun);
-$this->db->where('c.id_courier IS NOT NULL');
-$this->db->where('c.id_courier !=', '');
+$this->db->where('m.leaderboard_month', $bulan);
+$this->db->where('m.leaderboard_year', $tahun);
+// $this->db->where('c.id_courier IS NOT NULL');
+// $this->db->where('c.id_courier !=', '');
 
 if (!empty($origin)) {
     $this->db->where('z.origin_code', $origin);
@@ -182,7 +114,7 @@ if (!empty($origin)) {
 
 $this->db->group_by('c.id_courier, c.courier_name, z.zone');
 // $order = ($type === 'bottom') ? 'ASC' : 'DESC';
-//     $this->db->order_by('l.total_poin', $order);
+    
 
 
     // Search filter
@@ -279,8 +211,10 @@ function count_all_courier()
         }
     }
 
+ 
+
     public function get_total_poin_courier($no_runsheet){
-        $this->db->select('total_poin');
+        $this->db->select('total_poin,id_leaderboard');
         $this->db->where('no_runsheet',$no_runsheet);
         $this->db->from('leaderboard');
         $query = $this->db->get();
@@ -557,10 +491,70 @@ function count_all_courier()
     }
     public function delete_checker_notes($no_runsheet){
         $this->db->where('no_runsheet', $no_runsheet);
-        $this->db->delete('checker_notes');
+        $this->db->delete('runsheet_payment');
         return $this->db->affected_rows() > 0;
     }
 
-
+    public function calculate_and_insert_leaderboard($runsheet = null)
+    {
+        // Get data dari MV atau langsung dari checker
+        $this->db->select('
+            id_courier,
+            COUNT(awb) as total_awb,
+            SUM(CASE WHEN status_checker = "Sesuai" THEN 1 ELSE 0 END) as success_count,
+            no_runsheet
+        ');
+        $this->db->from('checker');
+        
+        if ($runsheet) {
+            $this->db->where('no_runsheet', $runsheet);
+        }
+        
+        $this->db->group_by('id_courier, no_runsheet');
+        $query = $this->db->get();
+        $courier_stats = $query->result_array();
+        
+        foreach ($courier_stats as $stat) {
+            $id_courier = $stat['id_courier'];
+            $total_awb = $stat['total_awb'];
+            $success_count = $stat['success_count'];
+            $runsheet_no = $stat['no_runsheet'];
+            
+            $success_rate = $total_awb > 0 ? ($success_count / $total_awb) * 100 : 0;
+            
+            // Perhitungan point
+            $kpi_point = ($total_awb > 80) ? 20 : (($total_awb < 80) ? -10 : 0);
+            $success_point = ($success_rate > 99) ? 20 : (($success_rate < 99) ? -10 : 0);
+            
+            // Check apakah sudah ada
+            $existing = $this->db->get_where('leaderboard', [
+                'id_courier' => $id_courier,
+                'no_runsheet' => $runsheet_no
+            ])->row();
+            
+            if ($existing) {
+                // Update
+                $this->db->where('id_courier', $id_courier);
+                $this->db->where('no_runsheet', $runsheet_no);
+                $this->db->update('leaderboard', [
+                    'kpi' => $kpi_point,
+                    'succes_rate' => $success_point,
+                    'total_poin' => $kpi_point + $success_point, // Hitung total
+                ]);
+            } else {
+                // Insert
+                $this->db->insert('leaderboard', [
+                    'id_courier' => $id_courier,
+                    'kpi' => $kpi_point,
+                    'succes_rate' => $success_point,
+                    'hrs' => 0,
+                    'total_poin' => $kpi_point + $success_point,
+                    'photo_pod' => 0,
+                    'minus_poin' => 0,
+                    'no_runsheet' => $runsheet_no,
+                ]);
+            }
+        }
+    }
 }
 ?>

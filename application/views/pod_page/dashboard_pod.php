@@ -13,7 +13,7 @@
         <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
         <?php
         $full_access = in_array($role, ['Admin', 'BPS', 'Super User', 'HC', 'PAO', 'CS', 'CCC', 'Kepala Cabang']);
-        $zone_only = in_array($role, ['Kepala Cabang BDO2', 'BBP']);
+        $zone_only = in_array($role, ['Kepala Cabang BDO2', 'BBP', 'POD', 'Admin BDO2']);
         $get_origins_array = json_decode($get_origins, true);
 
         // Ambil origin code dari object jika zone_only
@@ -114,19 +114,38 @@
         transform: translateY(-3px);
     }
 </style>
-<!-- Summary qty -->
-<div class="row">
-    <!-- qty selling -->
-    <div class="col-sm-6 col-md-3">
+<!-- Summary Paid POD -->
+<div class="row row-cols-1 row-cols-sm-2 row-cols-md-5">
+    <div class="col">
         <div class="card card-stats card-round">
             <div class="card-body">
                 <div class="row">
-                    <div class="col-5">
+                    <div class="col-3 me-0 pe-0">
                         <div class="icon-big text-center">
-                            <i class="bi bi-cash-stack"></i> <!-- Ikon kotak untuk total barang -->
+                            <i class="material-icons">account_balance_wallet</i></button>
                         </div>
                     </div>
-                    <div class="col-7 col-stats">
+                    <div class="col-9 col-stats ms-0 ps-0">
+                        <div class="numbers">
+                            <p class="card-category">Selisih Penyetoran</p>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800 total_"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Total Paid -->
+    <div class="col">
+        <div class="card card-stats card-round">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-3 me-0 pe-0">
+                        <div class="icon-big text-center">
+                            <i class="bi bi-cash-stack"></i>
+                        </div>
+                    </div>
+                    <div class="col-9 col-stats ms-0 ps-0">
                         <div class="numbers">
                             <p class="card-category">Total</p>
                             <div class="h5 mb-0 font-weight-bold text-gray-800 total_paid_cod"></div>
@@ -136,18 +155,18 @@
             </div>
         </div>
     </div>
-    <!-- Gross Profit -->
+    <!-- Transfer -->
 
-    <div class="col-sm-6 col-md-3">
+    <div class="col">
         <div class="card card-stats card-round">
             <div class="card-body">
                 <div class="row">
-                    <div class="col-5">
+                    <div class="col-3 me-0 pe-0">
                         <div class="icon-big text-center">
                             <i class="fas fa-credit-card"></i> <!-- Ikon check untuk sesuai -->
                         </div>
                     </div>
-                    <div class="col-7 col-stats">
+                    <div class="col-9 col-stats ms-0 ps-0">
                         <div class="numbers">
                             <p class="card-category">Transfer</p>
                             <div class="h5 mb-0 font-weight-bold text-gray-800 transfer"></div>
@@ -166,19 +185,19 @@
     
     ?>
 
-    <!-- Profit -->
-    <div class="col-sm-6 col-md-3">
+    <!-- Cash -->
+    <div class="col">
         <div class="card card-stats  card-round">
             <div class="card-body">
                 <div class="row">
-                    <div class="col-5">
+                    <div class="col-3 me-0 pe-0">
                         <div class="icon-big text-center">
                             <i class="fas fa-hand-holding-usd"></i> <!-- Ikon X untuk tidak sesuai -->
                         </div>
                     </div>
-                    <div class="col-7 col-stats">
+                    <div class="col-9 col-stats ms-0 ps-0">
                         <div class="numbers">
-                            <p class="card-category">Cod</p>
+                            <p class="card-category">Cash</p>
                             <div class="h5 mb-0 font-weight-bold text-gray-800 cod_paid"></div>
                         </div>
                     </div>
@@ -186,20 +205,22 @@
             </div>
         </div>
     </div>
-    <!-- Revisi -->
-    <div class="col-sm-6 col-md-3">
-        <div class="card card-stats card-round">        
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Selisih Penyetoran -->
+
+    <div class="col">
+        <div class="card card-stats card-round">
             <div class="card-body">
                 <div class="row">
-                    <div class="col-5">
+                    <div class="col-3 me-0 pe-0">
                         <div class="icon-big text-center">
-                            <i class="bi bi-dash-circle"></i> <!-- Ikon X untuk tidak sesuai -->
+                            <i class="material-icons">account_balance_wallet</i></button>
                         </div>
                     </div>
-                    <div class="col-7 col-stats">
+                    <div class="col-9 col-stats ms-0 ps-0">
                         <div class="numbers">
-                            <p class="card-category">Minus Cod</p>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800 minus_cod"></div>
+                            <p class="card-category">Selisih Penyetoran</p>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800 difference_pod"></div>
                         </div>
                     </div>
                 </div>
@@ -281,16 +302,25 @@
         // BOX 1 
 
         $.ajax({
-            url: "<?= base_url('Pod/summary_dashboard'); ?>",
+            url: "<?= base_url('Pod/summary_dashboard_pod'); ?>",
 
             dataType: "JSON",
             type: "POST",
             data: formData,
             success: (r) => {
-                
 
-                $('.minus_cod').text(formatRupiah(r.minus_cod || 0));
-                $('.cod_paid').text(formatRupiah(r.cod_paid || 0));
+
+                let value = r.difference_pod || 0; // nilai yang ingin ditampilkan
+                let sign = value < 0 ? '-' : '+';
+
+                // Ganti teks dengan format rupiah dan tanda
+                $('.difference_pod').text(sign + formatRupiah(Math.abs(value)));
+
+                // Ganti warna sesuai positif / negatif
+                $('.difference_pod').css('color', value < 0 ? 'red' : 'green');
+
+
+                $('.cod_paid').text(formatRupiah(r.cash || 0));
                 $('.total_paid_cod').text(formatRupiah(r.total_paid_cod || 0));
                 $('.transfer').text(formatRupiah(r.transfer || 0));
 

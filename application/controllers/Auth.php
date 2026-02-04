@@ -68,6 +68,9 @@ class Auth extends CI_Controller
                     case "Super User":
                     case "BBP":
                     case "PAO":
+                    case "POD":
+                    case "Admin BDO2":
+                    case "Koordinator BDO2":
                         $redirect_page = "dashboard";
                         break;
                 }
@@ -79,7 +82,7 @@ class Auth extends CI_Controller
                     'username' => $user->username,
                     'name' => $user->name,
                     'role' => $user->role,
-                    'pass' => $user->pass,
+                    'password' => $user->pass,
                     'location' => $user->location
                 ]
             ]);
@@ -90,6 +93,8 @@ class Auth extends CI_Controller
             } else if (empty($user->secret_2fa) || $user->is_2fa_enabled == 0) {
                 redirect('auth/setup_2fa');
             }
+
+            // redirect('dashboard');
             var_dump("login berhasil");
             log_message('debug', 'Login successful. Redirecting to: ' . $redirect_page);
             redirect($redirect_page);

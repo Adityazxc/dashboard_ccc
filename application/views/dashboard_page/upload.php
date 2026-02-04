@@ -13,7 +13,7 @@
         <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
         <?php
         $full_access = in_array($role, ['BPS', 'Super User', 'HC', 'PAO', 'CS', 'CCC', 'Kepala Cabang']);
-        $zone_only = in_array($role, ['Kepala Cabang BDO2', 'BBP', 'Admin']);
+        $zone_only = in_array($role, ['Kepala Cabang BDO2', 'BBP', 'Admin', 'Admin BDO2', 'POD']);
         $get_origins_array = json_decode($get_origins, true);
 
         // Ambil origin code dari object jika zone_only
@@ -148,15 +148,15 @@
     </div>
     <div id="upload-status"></div> -->
     <div class="card-body p-4">
-        <?php $access_upload = in_array($role, ['Koordinator', 'Admin', 'Super User','PAO']); ?>
+        <?php $access_upload = in_array($role, ['Super User', 'PAO']); ?>
         <?php if ($access_upload): ?>
             <form action="<?= base_url('upload/import_data') ?>" method="POST" enctype="multipart/form-data">
                 <!-- Tambahkan ini di atas tabel -->
                 <div class="d-flex justify-content-end">
-                    
+
                     <input type="hidden" id="Import_csrf" name="<?= $this->security->get_csrf_token_name() ?>"
-                    value="<?= $this->security->get_csrf_hash() ?>" />
-                    <div class="p-2">                    
+                        value="<?= $this->security->get_csrf_hash() ?>" />
+                    <div class="p-2">
                         <input type="file" class="form-control" name="excel_file" id="excel_file" required>
                     </div>
                     <div class="p-2">
@@ -186,7 +186,9 @@
                         <th>Zone</th>
                         <th>Zone Name</th>
                         <th>Status</th>
-                        <th>Action</th>
+                        <?php if ($role != "POD" || $role != "Koordinator BDO2" || $role != "Admin BDO2"): ?>
+                            <th>Action</th>
+                        <?php endif; ?>
                     </tr>
                 </thead>
                 <tbody>
@@ -218,8 +220,8 @@
                         autocomplete="off">
                     <input type="hidden" class="form-control" name="runsheet_date_delete" id="runsheet_date_delete"
                         autocomplete="off" required>
-                        <input type="hidden" class="form-control" name="no_runsheet_delete"
-                        id="no_runsheet_delete" autocomplete="off" required>
+                    <input type="hidden" class="form-control" name="no_runsheet_delete" id="no_runsheet_delete"
+                        autocomplete="off" required>
                 </div>
                 <div class="modal-footer">
                     <!-- Tombol Close (Footer) -->
@@ -250,7 +252,7 @@
                         id="id_checker_delete_backup" autocomplete="off">
                     <input type="hidden" class="form-control" name="runsheet_date_delete_backup"
                         id="runsheet_date_delete_backup" autocomplete="off" required>
-                  
+
                 </div>
                 <div class="modal-footer">
                     <!-- Tombol Close (Footer) -->
@@ -266,7 +268,7 @@
 
 <script type="text/javascript">
 
-    function deleteValidasi(id_courier, id_checker, create_date, runsheet_date, no_runsheet,courier_name) {
+    function deleteValidasi(id_courier, id_checker, create_date, runsheet_date, no_runsheet, courier_name) {
         $('#message-warning').html('Apakah anda yakin akan hapus validasi <b> ' + courier_name + ',</b> pada tanggal upload <b>' + create_date + '</b>?');
         $('#id_checker_delete').val(id_checker);
         $('#id_courrier_delete').val(id_courier);

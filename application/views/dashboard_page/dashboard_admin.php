@@ -13,7 +13,7 @@
         <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
         <?php
         $full_access = in_array($role, ['Admin', 'BPS', 'Super User', 'HC', 'PAO', 'CS', 'CCC', 'Kepala Cabang']);
-        $zone_only = in_array($role, ['Kepala Cabang BDO2', 'BBP']);
+        $zone_only = in_array($role, ['Kepala Cabang BDO2', 'BBP', 'POD', 'Admin BDO2']);
         $get_origins_array = json_decode($get_origins, true);
 
         // Ambil origin code dari object jika zone_only
@@ -158,19 +158,18 @@
         </div>
     </div>
 
-    <?php 
+    <?php
     $tidak_sesuai = "qty_tidak_sesuai";
     $encoded = base64_encode($tidak_sesuai); // Hasil: "VGlkYWsgU2VzdWFp"
     $text_revision = "qty_revisi";
     $revision = base64_encode($text_revision); // Hasil: "VGlkYWsgU2VzdWFp"
     
     ?>
-    
+
     <!-- Profit -->
     <div class="col-sm-6 col-md-3">
-        <div class="card card-stats  card-round"
-       onclick="window.location.href='dashboard/not_approve/data?filter=<?= $encoded ?>';"
-        style="cursor: pointer;border-bottom: 4px solid red;">
+        <div class="card card-stats  card-round" onclick="goToNotApprove()"
+            style="cursor: pointer;border-bottom: 4px solid red; ">
             <div class="card-body">
                 <div class="row">
                     <div class="col-5">
@@ -188,10 +187,30 @@
             </div>
         </div>
     </div>
+    <script>
+        function goToNotApprove() {
+            let from = document.getElementById("dateFrom").value;
+            let thru = document.getElementById("dateThru").value;
+            let origin = document.getElementById("origin").value;
+            let zone = document.getElementById("zone").value;
+            let encoded = "<?= $encoded ?>"; // tetap boleh pakai ini jika dibutuhkan
+
+            window.location.href = `dashboard/not_approve/data?filter=${encoded}&from=${from}&thru=${thru}&origin=${origin}&zone=${zone}`;
+        }
+        function goToRevision() {
+            let from = document.getElementById("dateFrom").value;
+            let thru = document.getElementById("dateThru").value;
+            let origin = document.getElementById("origin").value;
+            let zone = document.getElementById("zone").value;
+            let revision = "<?= $revision ?>"; // tetap boleh pakai ini jika dibutuhkan
+
+            window.location.href = `dashboard/not_approve/data?filter=${revision}&from=${from}&thru=${thru}&origin=${origin}&zone=${zone}`;
+        }
+    </script>
     <!-- Revisi -->
     <div class="col-sm-6 col-md-3">
-        <div class="card card-stats card-round"onclick="window.location.href='dashboard/not_approve/data?filter=<?= $revision ?>';"
-        style="cursor: pointer;border-bottom: 4px solid ; ">
+        <div class="card card-stats card-round" onclick="goToRevision()"
+            style="cursor: pointer;border-bottom: 4px solid ; ">
             <div class="card-body">
                 <div class="row">
                     <div class="col-5">
@@ -259,6 +278,9 @@
 </div>
 
 <script>
+    function formatNum(x) {
+        return new Intl.NumberFormat('id-ID').format(x);
+    }
 
     function formatRupiah(angka) {
         var number_string = angka.toString();
@@ -292,10 +314,13 @@
                 console.log(r.totalAwb);
                 console.log("hehe");
 
-                $('.totalAwb').text(r.totalAwb || 0);
-                $('.approve').text((r.approve || 0));
-                $('.notApprove').text((r.notApprove || 0));
-                $('.revision').text((r.revision || 0));
+
+
+                $('.totalAwb').text(formatNum(r.totalAwb || 0));
+                $('.approve').text(formatNum(r.approve || 0));
+                $('.notApprove').text(formatNum(r.notApprove || 0));
+                $('.revision').text(formatNum(r.revision || 0));
+
 
             },
             error: (xhr, status, error) => {

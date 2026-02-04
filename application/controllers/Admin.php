@@ -45,6 +45,10 @@ class Admin extends CI_Controller
                 || $user_role == "Kepala Cabang"
                 || $user_role == "BBP"
                 || $user_role == "PAO"
+                || $user_role == "POD"
+                || $user_role == "Admin BDO2"
+                || $user_role == "Koordinator BDO2"
+                
             )
         ) {
             $data['title'] = 'Dashboard Admin';
@@ -95,6 +99,7 @@ class Admin extends CI_Controller
         $status_pod = base64_decode(urldecode($status_pod));
         $runsheet_date = base64_decode(urldecode($runsheet_date));
         $no_runsheet = base64_decode(urldecode($no_runsheet));
+        
         $checker_approve = $this->Checker_model->_get_data_approve($id_courier, $runsheet_date);
         $checker_not_approve = $this->Checker_model->_get_data_not_approve($id_courier, $runsheet_date);
         $checker_revision = $this->Checker_model->_get_data_revision($id_courier, $runsheet_date);        
@@ -128,24 +133,21 @@ class Admin extends CI_Controller
     public function change_status_awb(){
         $runsheet_date=date("Y-m-d",strtotime($this->input->post("runsheet_date_status_pod")));             
         $id_courier=$this->input->post("id_courier_status_pod");        
-        if ($this->Checker_model->change_status_awb($runsheet_date,$id_courier)) {
-
-            
+        if ($this->Checker_model->change_status_awb($runsheet_date, $id_courier)) {
             $response = [
                 'status' => 'success',
-                'message' => 'Status AWB berhasil di ubah!',
+                'message' => 'Status AWB berhasil diubah!',
                 'redirect' => base_url('admin')
             ];
-            $this->refresh_db();
         } else {
             $response = [
                 'status' => 'danger',
-                'message' => 'Status AWB gagal di ubah',  
-                'redirect' => base_url('admin')              
+                'message' => 'Status AWB gagal diubah',
+                'redirect' => base_url('admin')
             ];
-        }
-           
+        }        
         echo json_encode($response);
+                
     }
 
 
@@ -166,11 +168,11 @@ class Admin extends CI_Controller
         $runsheet_date = $this->input->post("runsheet_date");
         $no_runsheet = $this->input->post("no_runsheet");
 
-        
+        // var_dump($id_checker);
 
         if ($this->Checker_model->_change_status($id_courier, $id_checker)) {
             // Refresh materialize
-            $this->Checker_model->refresh_mv_checker_summary();
+            $this->Checker_model->refresh_mv_checker_summary($id_checker);
             $point_photo_pod = $this->Leaderboard_model->get_status_photo_pod($id_courier, $runsheet_date);
     
                 

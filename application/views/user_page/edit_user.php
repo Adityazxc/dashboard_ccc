@@ -96,6 +96,9 @@
                                     <option value="Kepala Cabang BDO2">Kepala Cabang BDO2</option>
                                     <option value="PAO">PAO</option>
                                     <option value="Super User">Super User</option>
+                                    <option value="POD">POD</option>
+                                    <option value="Admin BDO2">Admin BDO2</option>
+                                    <option value="Koordinator BDO2">Koordinator BDO2</option>
                                 </select>
                             </div>
                         </div>

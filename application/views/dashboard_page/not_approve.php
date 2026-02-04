@@ -2,12 +2,16 @@
     <div class="row">
         <div class="form-group col-md-2">
             <label for="dateFrom">From:</label>
-            <input type="date" class="form-control" id="dateFrom" name="dateFrom" value="<?= date('Y-m-d') ?>">
+            <input type="date" class="form-control" id="dateFrom" name="dateFrom"
+                value="<?= isset($_GET['from']) ? $_GET['from'] : date('Y-m-d') ?>">
         </div>
+
         <div class="form-group col-md-2">
             <label for="dateThru">Thru:</label>
-            <input type="date" class="form-control" id="dateThru" name="dateThru" value="<?= date('Y-m-d') ?>">
+            <input type="date" class="form-control" id="dateThru" name="dateThru"
+                value="<?= isset($_GET['thru']) ? $_GET['thru'] : date('Y-m-d') ?>">
         </div>
+
         <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
@@ -135,20 +139,37 @@
 </style>
 <div class="card card-raised">
     <div class="card-header text-white px-4">
-        <div class="d-flex align-items-center">
+        <div class="d-flex justify-content-between align-items-center">
 
-            <a href="<?= base_url('dashboard') ?>">
-                <i class="bi bi-arrow-left fs-2 m-2"></i>
-            </a>
-            <?php if ($filter == "qty_tidak_sesuai"): ?>
-                <h2 class="card-title text-primary mb-0 ">Detail Not Approve Validasi</h2>
-            <?php else: ?>
-                <h2 class="card-title text-primary mb-0 ">Detail Revision Validasi</h2>
-            <?php endif; ?>
+            <!-- BAGIAN KIRI -->
+            <div class="d-flex align-items-center">
+                <a href="<?= base_url('dashboard') ?>">
+                    <i class="bi bi-arrow-left fs-2 m-2"></i>
+                </a>
 
+                <?php if ($filter == "qty_tidak_sesuai"): ?>
+                    <h2 class="card-title text-primary mb-0 ms-2">Detail Not Approve Validasi</h2>
+                <?php else: ?>
+                    <h2 class="card-title text-primary mb-0 ms-2">Detail Revision Validasi</h2>
+                <?php endif; ?>
+            </div>
+            
+            <!-- BAGIAN KANAN -->
+            <div>
+                <?php if ($filter == "qty_tidak_sesuai"): ?>                    
+                    <button type="button" id="exportExcelBtn" class="btn btn-success">
+                        <i class="bi bi-file-earmark-excel"></i> Download Data
+                    </button>
+                    <?php else: ?>
+                        <button type="button" id="exportRevisionBtn" class="btn btn-success">
+                            <i class="bi bi-file-earmark-excel"></i> Download Data Revisi
+                        </button>                  
+                <?php endif; ?>
+            </div>
 
         </div>
     </div>
+
 
     <!-- <div id="progress-container">
         <div id="progress-bar">0%</div>
@@ -249,7 +270,7 @@
 
 
 <script type="text/javascript">
-    
+
     function deleteValidasi(id_courier, id_checker, create_date, runsheet_date, courier_name) {
         $('#message-warning').html('Apakah anda yakin akan hapus validasi <b> ' + courier_name + ',</b> pada tanggal upload <b>' + create_date + '</b>?');
         $('#id_checker_delete').val(id_checker);
@@ -283,7 +304,7 @@
                     d.origin = $('[name="origin"]').val().trim();
                     d.zone = $('[name="zone"]').val().trim();
                     d.role = role;
-                    d.filter=filter;
+                    d.filter = filter;
 
                 }
             },
@@ -305,6 +326,49 @@
     });
 
 
+    $('#exportExcelBtn').click(function (e) {
+        e.preventDefault();
+
+        // Ambil nilai dari form filter
+        const dateFrom = $('#dateFrom').val();
+        const dateThru = $('#dateThru').val();
+        const agent = $('#agent').val();
+
+        // Buat form dinamis
+        const form = $('<form>', {
+            method: 'POST',
+            action: '<?= base_url('Dashboard/export_not_approve') ?>',
+
+        });
+
+        form.append($('<input>', { type: 'hidden', name: 'dateFrom', value: dateFrom }));
+        form.append($('<input>', { type: 'hidden', name: 'dateThru', value: dateThru }));
+
+        $('body').append(form);
+        form.submit();
+    });
+    $('#exportRevisionBtn').click(function (e) {
+        e.preventDefault();
+
+        // Ambil nilai dari form filter
+        const dateFrom = $('#dateFrom').val();
+        const dateThru = $('#dateThru').val();
+        const agent = $('#agent').val();
+
+        // Buat form dinamis
+        const form = $('<form>', {
+            method: 'POST',
+            action: '<?= base_url('Dashboard/export_revision') ?>',
+
+        });
+
+        form.append($('<input>', { type: 'hidden', name: 'dateFrom', value: dateFrom }));
+        form.append($('<input>', { type: 'hidden', name: 'dateThru', value: dateThru }));
+
+        $('body').append(form);
+        form.submit();
+    });
 
 
 </script>
+

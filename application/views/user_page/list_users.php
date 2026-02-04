@@ -66,7 +66,7 @@
                     "orderable": false
                 },
                 {
-                    "targets": [0, 4,6],
+                    "targets": [0, 4, 6],
                     "className": 'text-center'
                 },
             ],
@@ -89,7 +89,7 @@
     }
     function lockedUsers(id, username) {
         $('#message-locked-warning').text('Apakah anda yakin akan lock user ' + username + '?');
-        $('#idUserlocked').val(id);        
+        $('#idUserlocked').val(id);
     }
     function editUsers(id, username, location, no_hp, role, name) {
         $('#message-edit-user').text('Anda akan merubah data dari user ' + name + ' ?');
@@ -98,7 +98,10 @@
         $('#usernameEdit').val(username);
         $('#noHpEdit').val(no_hp);
         $("#defaultRoleEdit").val(role).trigger("change");
-        $("#defaultLocationEdit").val(location).trigger("change");
+        location = location.trim();
+        $("#locationEdit").val(location).trigger("change");
+
+
 
     }
 
@@ -110,7 +113,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="exampleModalLabel">Reset Default Password</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">                    
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
                 </button>
             </div>
             <form action="<?= base_url('users/default_password') ?>" method="POST" enctype="multipart/form-data">
@@ -145,7 +148,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="exampleModalLabel">Delete Password</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">                    
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
                 </button>
             </div>
             <form action="<?= base_url('users/delete_users') ?>" method="POST" enctype="multipart/form-data">
@@ -180,7 +183,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="exampleModalLabel">Delete Password</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">                    
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
                 </button>
             </div>
             <form action="<?= base_url('users/locked_users') ?>" method="POST" enctype="multipart/form-data">
@@ -189,10 +192,10 @@
                     <div class="row">
 
                         <input id="idUserlocked" name="idUserlocked" type="hidden" class="form-control"
-                             autocomplete="off" required>                      
+                            autocomplete="off" required>
 
                     </div>
-                 
+
 
                 </div>
                 <div class="modal-footer border-0">

@@ -66,7 +66,7 @@ class Users extends CI_Controller
         onclick="editUsers(
             ' . $item->id_user . ', 
             \'' . addslashes(trim($item->username)) . '\', 
-            \'' . addslashes(trim($item->zone)) . '\', 
+            \'' . addslashes(trim($item->location)) . '\', 
             \'' . addslashes(trim($item->no_hp)) . '\', 
             \'' . addslashes(trim($item->role)) . '\',             
             \'' . addslashes(trim($item->name)) . '\')"

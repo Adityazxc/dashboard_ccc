@@ -48,6 +48,9 @@ class Pod extends CI_Controller
                 || $user_role == "Kepala Cabang"
                 || $user_role == "BBP"
                 || $user_role == "PAO"
+                || $user_role == "POD"
+                || $user_role == "Admin BDO2"
+                || $user_role == "Koordinator BDO2"
             )
         ) {
             $data['title'] = 'Dashboard Admin';
@@ -63,44 +66,157 @@ class Pod extends CI_Controller
             redirect('auth');
         }
     }
-    public function summary_dashboard()
+
+
+    public function summary_dashboard_pod()
     {
         $dateFrom = $this->input->post('dateFrom');
         $dateThru = $this->input->post('dateThru');
         $origin = $this->input->post('origin', TRUE);
         $zone = $this->input->post('zone', TRUE);
 
-        $this->db->select("
-        sum(cn.minus_cod) as minus_cod,
-        sum(cn.cod_paid) as cod_paid,
-        sum(cn.total_paid_cod) as total_paid_cod,
-        sum(cn.transfer) as transfer,
-       
-        
-        ");
-        if (!empty($origin)) {
+        // ---------------------------
+        // 1. Checker summary gabungan + join zone
+        // ---------------------------
+        $select_columns = "
+            s.amount, 
+            s.cod_undelivered, 
+            s.qty_tidak_sesuai, 
+            s.qty_revisi,
+            'mv' AS source_table
+        ";
 
-            $this->db->where('z.origin_code', $origin);
-        }
+        $sql = "
+            SELECT 
+                SUM(amount) AS amount,
+                SUM(cod_undelivered) AS cod_undelivered,
+                SUM(amount) - SUM(cod_undelivered) AS total_paid_cod               
+            FROM (
+                SELECT $select_columns
+                FROM mv_checker_summary s
+                LEFT JOIN zone z ON s.zone = z.zone_code
+                WHERE s.runsheet_date BETWEEN ? AND ?
+                  AND (? = '' OR z.origin_code = ?)
+                  AND (? = '' OR z.zone_code = ?)
+                UNION ALL
+                SELECT $select_columns
+                FROM summary_checker s
+                LEFT JOIN zone z ON s.zone = z.zone_code
+                WHERE s.runsheet_date BETWEEN ? AND ?
+                  AND (? = '' OR z.origin_code = ?)
+                  AND (? = '' OR z.zone_code = ?)
+            ) AS combined
+        ";
 
-        if (!empty($zone)) {
+        $params = [
+            $dateFrom . ' 00:00:00',
+            $dateThru . ' 23:59:59',
+            $origin,
+            $origin,
+            $zone,
+            $zone,
+            $dateFrom . ' 00:00:00',
+            $dateThru . ' 23:59:59',
+            $origin,
+            $origin,
+            $zone,
+            $zone
+        ];
 
-            $this->db->where('z.zone_code', $zone);
-        }
-        $this->db->from("checker_notes cn");
-        $this->db->join("mv_checker_summary mv", "mv.no_runsheet=cn.no_runsheet", "left");
-        $this->db->join("zone z", "z.zone_code=mv.zone", "left");
-        $query = $this->db->get();
+        $query = $this->db->query($sql, $params);
         $result = $query->row();
 
+        // ---------------------------
+        // 2. runsheet_payment + join courier -> zone -> filter origin/zone + group_by id_courier
+        // ---------------------------
+        $sqlPayment = "
+            SELECT SUM(tot_transfer) AS total_transfer,
+                   SUM(tot_cod) AS total_cash,
+                   SUM(tot_transfer + tot_cod) AS total_called_paid
+            FROM (
+                SELECT p.id_courier,
+                       SUM(p.transfer) AS tot_transfer,
+                       SUM(p.cod_paid) AS tot_cod
+                FROM runsheet_payment p
+                JOIN (
+                    SELECT DISTINCT s.id_courier, z.zone_code, z.origin_code
+                    FROM mv_checker_summary s
+                    JOIN zone z ON s.zone = z.zone_code
+                ) AS courier_zone ON p.id_courier = courier_zone.id_courier
+                WHERE p.payment_date BETWEEN ? AND ?
+                  AND (? = '' OR courier_zone.origin_code = ?)
+                  AND (? = '' OR courier_zone.zone_code = ?)
+                GROUP BY p.id_courier
+            ) AS grouped_payment
+        ";
 
+        $paramsPayment = [
+            $dateFrom . ' 00:00:00',
+            $dateThru . ' 23:59:59',
+            $origin,
+            $origin,
+            $zone,
+            $zone
+        ];
+
+        $queryPayment = $this->db->query($sqlPayment, $paramsPayment);
+        $paymentResult = $queryPayment->row();
+
+        // ---------------------------
+        // 3. courier_overpaid + join courier -> zone -> filter origin/zone + group_by id_courier
+        // ---------------------------
+        $sqlOverpaid = "
+            SELECT SUM(tot_overpaid) AS total_overpaid
+            FROM (
+                SELECT p.id_courier, SUM(p.amount) AS tot_overpaid
+                FROM courier_overpaid p
+                JOIN (
+                    SELECT DISTINCT s.id_courier, z.zone_code, z.origin_code
+                    FROM mv_checker_summary s
+                    JOIN zone z ON s.zone = z.zone_code
+                ) AS courier_zone ON p.id_courier = courier_zone.id_courier
+                WHERE p.payment_date BETWEEN ? AND ?
+                  AND (? = '' OR courier_zone.origin_code = ?)
+                  AND (? = '' OR courier_zone.zone_code = ?)
+                GROUP BY p.id_courier
+            ) AS grouped_overpaid
+        ";
+
+        $paramsOverpaid = [
+            $dateFrom . ' 00:00:00',
+            $dateThru . ' 23:59:59',
+            $origin,
+            $origin,
+            $zone,
+            $zone
+        ];
+
+        $queryOverpaid = $this->db->query($sqlOverpaid, $paramsOverpaid);
+        $overpaidResult = $queryOverpaid->row();
+        $total_overpaid = (int) $overpaidResult->total_overpaid;
+
+        // ---------------------------
+        // 4. plus_minus = total_called_paid + total_overpaid - total_paid_cod
+        // ---------------------------
+        $plus_minus = (int) $paymentResult->total_called_paid + $total_overpaid - (int) $result->total_paid_cod;
+
+        // ---------------------------
+        // 5. JSON Output
+        // ---------------------------
         echo json_encode([
-            'minus_cod' => (int) $result->minus_cod,
-            'cod_paid' => (int) $result->cod_paid,
+            'undel' => (int) $result->cod_undelivered,
+            'amount' => (int) $result->amount,
+            'difference_pod' => (int) $plus_minus,
             'total_paid_cod' => (int) $result->total_paid_cod,
-            'transfer' => (int) $result->transfer
+            'transfer' => (int) $paymentResult->total_transfer,
+            'cash' => (int) $paymentResult->total_cash,
+            'overpaid' => $total_overpaid,
+            'total_called_paid' => (int) $paymentResult->total_called_paid,
         ]);
     }
+
+
+
 
     public function dashboard_pod()
     {
@@ -127,6 +243,9 @@ class Pod extends CI_Controller
                 || $user_role == "Kepala Cabang"
                 || $user_role == "BBP"
                 || $user_role == "PAO"
+                || $user_role == "POD"
+                || $user_role == "Admin BDO2"
+                || $user_role == "Koordinator BDO2"
             )
         ) {
             $data['title'] = 'Dashboard POD';
@@ -143,33 +262,6 @@ class Pod extends CI_Controller
         }
     }
 
-
-
-    public function get_zone()
-    {
-        $origin = $this->input->post('origin'); // Ambil kategori dari AJAX       
-        $zones = $this->Admin_model->_get_zone($origin); // Ambil case berdasarkan kategori
-
-        echo json_encode($zones); // Kembalikan sebagai JSON
-    }
-
-
-    public function master_data_users()
-    {
-
-        $user_role = $this->session->userdata('role');
-        // if ($this->session->userdata('logged_in') && ($user_role == 'Admin' || $user_role == 'Super User' || $user_role == 'HC')) {
-        $data['title'] = 'Dashboard Admin';
-        $data['page_name'] = 'master_data_users';
-        $data['role'] = $user_role;
-        // $data['employee_positions'] = $this->User_model->get_employee_positions();
-        $this->load->view('dashboard', $data);
-        // } else {
-        //     redirect('auth');
-        // }
-
-
-    }
     public function detail_pod()
     {
         $data['page_name'] = 'detail_pod';
@@ -178,86 +270,63 @@ class Pod extends CI_Controller
         $data['id_user'] = $this->session->userdata('id_user');
         $data['role'] = $user_role;
         $data['mode'] = "readonly";
-        $data_courier = $this->get_data_courier();
-        $data['data_courier'] = $data_courier;
+        $filter = $this->session->flashdata('filter_pod');
+        $data['dateFrom'] = $filter['dateFrom'] ?? date('Y-m-d');
+        $data['dateThru'] = $filter['dateThru'] ?? date('Y-m-d');
+        $data['select_courier'] = $filter['select_courier'] ?? '';
 
-        $this->load->view('dashboard', $data);
-    }
-
-    public function get_data_courier()
-    {
+        // Data untuk dropdown (form awal)
         $data_courier = $this->Courier_model->_get_data_courier();
-
-        // return var_dump($customers);
-        return $data_courier;
-    }
-
-    public function edit_detail_pod($encrypted_id, $no_runsheet)
-    {
-
-        $id_chechker_notes = base64_decode(urldecode($encrypted_id));
-        $no_runsheet = base64_decode(urldecode($no_runsheet));
-        $get_cod_pod = $this->Pod_model->get_cod_pod($no_runsheet);
-        $data['page_name'] = 'detail_pod';
-        $user_role = $this->session->userdata('role');
-        $data['title'] = "Edit Detail POD";
-        $data['id_user'] = $this->session->userdata('id_user');
-        $data['role'] = $user_role;
-        $data['mode'] = "edit";
-        $data['get_cod_pod'] = $get_cod_pod;
-
+        $data['data_courier'] = $data_courier;
+        // Jika bukan AJAX request, load view normal
         $this->load->view('dashboard', $data);
-
     }
-    public function read_detail_pod($encrypted_id, $no_runsheet)
-    {
-
-        $id_chechker_notes = base64_decode(urldecode($encrypted_id));
-        $no_runsheet = base64_decode(urldecode($no_runsheet));
-        $get_cod_pod = $this->Pod_model->get_cod_pod($no_runsheet);
-        $data['page_name'] = 'detail_pod';
-        $user_role = $this->session->userdata('role');
-        $data['title'] = "Detail POD";
-        $data['id_user'] = $this->session->userdata('id_user');
-        $data['role'] = $user_role;
-        $data['mode'] = "read";
-        $data['get_cod_pod'] = $get_cod_pod;
-
-        $this->load->view('dashboard', $data);
-
-    }
-
-
 
     public function getSourceDataMultiple()
     {
-        $year = $this->input->post('year') ?? date('Y'); // Default tahun sekarang
+        $year = $this->input->post('year') ?? date('Y');
         $origin = $this->input->post('origin');
         $zone = $this->input->post('zone');
+
+        // ambil data dari MODEL (uang)
         $source_data = $this->Pod_model->getSourceDataMultiple($year, $origin, $zone);
 
         $dataBySource = [];
-        $allMonths = range(1, 12);
 
-        foreach ($source_data as $data) {
-            $source = $data['status_checker'];
-            $month = (int) $data['month'];
-            $count = (int) $data['count'];
+        foreach ($source_data as $row) {
+            $status = $row['status_checker']; // Minus Cod, Cod, Total Cod, Transfer
+            $month = (int) $row['month'];
+            $count = (int) $row['count'];
 
-            if (!isset($dataBySource[$source])) {
-                $dataBySource[$source] = array_fill(1, 12, 0); // Isi default 0 untuk semua bulan
+            // init 12 bulan
+            if (!isset($dataBySource[$status])) {
+                $dataBySource[$status] = array_fill(1, 12, 0);
             }
 
-            $dataBySource[$source][$month] = $count;
+            $dataBySource[$status][$month] = $count;
         }
 
 
         echo json_encode([
             'success' => true,
             'dataBySource' => $dataBySource,
-            'months' => ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+            'months' => [
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "May",
+                "Jun",
+                "Jul",
+                "Aug",
+                "Sep",
+                "Oct",
+                "Nov",
+                "Dec"
+            ]
         ]);
     }
+
 
     public function getSourceData()
     {
@@ -265,24 +334,24 @@ class Pod extends CI_Controller
         $dateThru = $this->input->post('dateThru');
         $origin = $this->input->post('origin');
         $zone = $this->input->post('zone');
-        $source_data = []; // Default empty array
+
+        $source_data = [];
 
         if ($dateFrom && $dateThru) {
-            $source_data = $this->Pod_model->getSourceData($dateFrom, $dateThru, $origin, $zone);
+            $source_data = $this->Pod_model->getSourceData(
+                $dateFrom,
+                $dateThru,
+                $origin,
+                $zone
+            );
         }
-
-        $mapped_data = [];
-        $label_mapping = [
-            'Sesuai' => 'Sesuai',
-            'Tidak Sesuai' => 'Tidak Sesuai',
-            'Revisi' => 'Revisi',
-        ];
 
         $sourceLabels = [];
         $sourceCounts = [];
 
         foreach ($source_data as $data) {
-            $sourceLabels[] = $label_mapping[$data['status_checker']] ?? $data['status_checker'];
+            // langsung pakai label dari model
+            $sourceLabels[] = $data['status_checker'];
             $sourceCounts[] = (int) $data['count'];
         }
 
@@ -292,6 +361,15 @@ class Pod extends CI_Controller
             'sourceCounts' => $sourceCounts
         ]);
     }
+
+    // let value = r.minus || 0; // nilai yang ingin ditampilkan
+    // let sign = value < 0 ? '-' : '+';
+
+    // // Ganti teks dengan format rupiah dan tanda
+    // $('.minus_cod').text(sign + formatRupiah(Math.abs(value)));
+
+    // // Ganti warna sesuai positif / negatif
+    // $('.minus_cod').css('color', value < 0 ? 'red' : 'green');
     public function getdatatables_cod_pod()
     {
         $user_role = $this->session->userdata('role');
@@ -299,71 +377,82 @@ class Pod extends CI_Controller
         $data = array();
         $no = $this->input->post('start', true);
         foreach ($list as $item) {
-
-            if ($item->status_cod == "L") {
-                $status_cod = "Lunas";
-            }
-            $closing_name = $item->closing_name;
+            // $closing_name = $item->closing_name;
+            // var_dump($item);
             $no++;
             $row = array();
+            $total_called_cod = $item->amount - $item->cod_undelivered;
+            $plus_minus = $item->cod_called;
+            $selisih = $item->cod_called - $total_called_cod;
+            $persentase_cod = $total_called_cod != 0 ? ($item->cod_called / $total_called_cod) * 100 : 0;
+
+
+
+
+
             $row[] = '<small style="font-size:12px">' . $no . '</small>';
+
             $row[] = '<small style="font-size:12px"><b>' . htmlspecialchars($item->courier_name) . '</b><br>
             ' . htmlspecialchars($item->id_courier) . '
             </small>';
-            if ($item->status_cod == "L") {
-                $row[] = '<span class="badge rounded-pill bg-success"> Lunas </span>';
-            } else {
-                $row[] = '<span class="badge rounded-pill bg-danger"> Belum Lunas </span>';
-            }
-            if (isset($item->closing_hrs_by)) {
-                $row[] = '<small style="font-size:12px"><b>' . htmlspecialchars($item->create_name) . ',</b><br>
-                closing by <b> ' . htmlspecialchars(($closing_name)) .'</b> 
-                </small>';
-            } else {
-                $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->create_name) . '</small>';
-            }
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->no_runsheet) . '</small>';
-            $row[] = '<b style="font-size:12px"> Rp ' . number_format($item->cod_paid) . '/ Rp ' . number_format($item->total_paid_cod) . '</b>
-            <br>
-            <div class="progress">
-                <div class="progress-bar progress-bar-striped" style="width:' . $item->persentase_cod . '%">' . number_format($item->persentase_cod, 1) . '%</div>
-            </div>
-            ';
-
-            if ($item->minus_cod < 0) {
-                $plus_minus_cod = "+ " . abs($item->minus_cod);
-            } else {
-                $plus_minus_cod = $item->minus_cod;
-            }
-            $row[] = '<small style="font-size:12px">' . $plus_minus_cod . '</small>';
+            $row[] = '<small style="font-size:12px"><b>' . htmlspecialchars($item->no_runsheet) . '</b>';
             $row[] = '<small style="font-size:12px">' . date('Y-m-d', strtotime($item->runsheet_date)) . '</small>';
-            $row[] = '<small style="font-size:12px">' . $item->poin_hrs . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->paid_off_date) . '</small>';
+            $row[] = '<small style="font-size:12px">' . date('Y-m-d', strtotime($item->created_at)) . '</small>';
+            $row[] = '<small style="font-size:12px"><b>' . htmlspecialchars($item->created_by_name) . '</b>';
+            $row[] = '<small style="font-size:12px"><b>' . htmlspecialchars($item->closed_by_name) . '</b>';
+            $row[] = '<b style="font-size:12px"> Rp ' . number_format($item->cod_paid) . '/ Rp ' . number_format($total_called_cod) . '</b>
+                <br>
+                <div class="progress">
+                    <div class="progress-bar progress-bar-striped" style="width:' . $persentase_cod . '%">' . number_format($persentase_cod, 1) . '%</div>
+                </div>
+                ';
 
-            $button = ' <div class="form-button-action"> ';
-            if ($item->status_cod === 'BL') {
-                $button .= '
-        <a href="' . base_url('pod/edit_detail_pod/' . urlencode(base64_encode($item->id_checker_notes)) . '/' . urlencode(base64_encode($item->no_runsheet))) . '"  
-            class="btn btn-dark waves-effect waves-light btn-sm me-1" 
-            title="Detail" data-plugin="tippy" data-tippy-placement="top">
-            <i class="fa fa-info-circle"> Detail</i>
-        </a>';
 
-            } else if ($item->status_cod === 'L') {
-                $button .= '
-                <a href="' . base_url('pod/read_detail_pod/' . urlencode(base64_encode($item->id_checker_notes)) . '/' . urlencode(base64_encode($item->no_runsheet))) . '"  
-                    class="btn btn-dark waves-effect waves-light btn-sm me-1" 
-                    title="Detail" data-plugin="tippy" data-tippy-placement="top">
-                    <i class="fa fa-info-circle"> Detail</i>
-                </a>';
+
+            if ($total_called_cod <= $item->cod_called) {
+                $row[] = '<span class="badge rounded-pill bg-success"> Lunas </span>';
+                $button = ' <div class="form-button-action"> ';
+
+                $button .= '</div>';
+
+
+            } else {
+                $row[] = '<span class="badge rounded-pill bg-warning"> Belum Lunas </span>';
+
+                $button = ' <div class="form-button-action"> ';
+
+                $button .= '</div>';
+
 
             }
+            ;
+
+            if ($selisih > 0) {
+                $row[] = '<b class="text-success" style="font-size:12px">
+                            ▲ Rp ' . number_format($selisih) . '
+                          </b>';
+            } elseif ($selisih < 0) {
+
+                $row[] = '<b class="text-danger" style="font-size:12px">
+                            ▼ Rp ' . number_format(abs($selisih)) . '
+                          </b>';
+            } else {
+                $row[] = '<b class="text-muted" style="font-size:12px">
+                 Rp ' . number_format(abs($selisih)) . '
+              </b>';
+            }
+
+            $button .= '
+                    <a href="' . base_url('pod/read_detail_pod/' . urlencode(base64_encode($item->id_courier)) . '/' . urlencode(base64_encode($item->runsheet_date))) . '"  
+                        class="btn btn-dark waves-effect waves-light btn-sm me-1" 
+                        title="Detail" data-plugin="tippy" data-tippy-placement="top">
+                        <i class="fa fa-info-circle"> Detail</i>
+                    </a>';
+
+
             $button .= '</div>';
 
             $row[] = $button;
-
-
-
             $data[] = $row;
         }
         $output = array(
@@ -375,6 +464,35 @@ class Pod extends CI_Controller
         echo json_encode($output);
     }
 
+
+
+    public function read_detail_pod($id_courier, $runsheet_date)
+    {
+        $id_courier = base64_decode(urldecode($id_courier));
+        $runsheet_date = base64_decode(urldecode($runsheet_date));
+        $runsheet_date = date('Y-m-d', strtotime($runsheet_date));
+
+        $get_cod_pod = $this->Pod_model->get_cod_pod($runsheet_date);
+
+        $data['page_name'] = 'detail_pod';
+        $data['title'] = "Detail POD";
+        $data['id_user'] = $this->session->userdata('id_user');
+        $data['role'] = $this->session->userdata('role');
+
+        $data['mode'] = 'edit';
+        $data['dateFrom'] = $runsheet_date;
+        $data['dateThru'] = $runsheet_date;
+
+        // 🔥 INI KUNCINYA
+        $data['select_courier'] = $id_courier;
+
+        // Data dropdown (WAJIB)
+        $data['data_courier'] = $this->get_data_courier();
+
+        $data['get_cod_pod'] = $get_cod_pod;
+
+        $this->load->view('dashboard', $data);
+    }
 
     public function progress()
     {
@@ -401,378 +519,474 @@ class Pod extends CI_Controller
         }
 
     }
-
-
-    public function search_courier()
+    public function get_detail_cod_by_id()
     {
-        // $no_runsheet = "BDO/DRI/15150803";   
-        $id_courier =  $this->input->post('id_courier');
-        $start_date =  $this->input->post('dateFrom');
-        $end_date =  $this->input->post('dateThru');
-        // var_dump($id_courier,$start_date,$end_date);    
+        $start_date = "2025-09-20";
+        $end_date = "2025-10-20";
+        $id_courier = "BDO1007";
 
-        if ($this->Pod_model->_get_no_runsheet_by_id($id_courier,$start_date,$end_date)) {
+        $this->db->select('amount, cod_undelivered, qty_awb, runsheet_date');
+        $this->db->from('mv_checker_summary');
+        $this->db->where('Date(runsheet_date) >=', $start_date);
+        $this->db->where('Date(runsheet_date) <=', $end_date);
+        $this->db->where('id_courier', $id_courier);
 
-            $response = [
-                'remarks' => "No Runsheet sudah ada!",
-            ];
+        $query = $this->db->get();
+        $results = $query->result();
 
-        } else {
+        // Inisialisasi total
+        $total_amount = 0;
+        $total_cod_undelivered = 0;
+        $total_qty_awb = 0;
+        $runsheet_dates = [];
 
-            $get_detail_cod = $this->Pod_model->get_detail_cod_by_id($id_courier,$start_date,$end_date);
-            if ($get_detail_cod) {
-                $id_courier = $get_detail_cod->id_courier;
-                // var_dump($get_detail_cod);
+        foreach ($results as $row) {
+            $total_amount += $row->amount;
+            $total_cod_undelivered += $row->cod_undelivered;
+            $total_qty_awb += $row->qty_awb;
 
-                $cod_data = [
-                    'cod_display' => $get_detail_cod->amount,
-                    'display_undelivered' => $get_detail_cod->cod_undelivered,
-                    'total_awb' => $get_detail_cod->qty_awb,
-                    'runsheet_date' =>
-                        date('Y-m-d', strtotime(
-                            $get_detail_cod->runsheet_date
-                        )),
-                ];
-                if ($response = $get_detail_cod = $this->Courier_model->search_courier($id_courier)) {
+            $formatted_date = date('Y-m-d', strtotime($row->runsheet_date));
+            $runsheet_dates[] = $formatted_date;
+        }
 
-                    $runsheet_date = $cod_data['runsheet_date'];
-                    $progress = $this->Checker_model->_get_progress($id_courier, $runsheet_date);
-                    $persentase_progres = ($progress->success_pod / ($progress->success_pod + $progress->in_progress_pod)) * 100;
-                    $get_status_pod=$this->Pod_model->get_status_pod_by_id($id_courier,$start_date,$end_date);
-                    $status_awb=$this->Pod_model->get_status_awb_by_id($id_courier,$start_date,$end_date);
-                    $get_no_runsheet=$this->Checker_model->_select_runsheet($id_courier,$start_date,$end_date);
-                    if(empty($get_status_pod->status_pod)){
-                        $response = [
-                            'remarks' => "Status POD belum di submit, hubungi tim checker POD",
-    
-                        ];
-                    }else{
-                        if ($persentase_progres == 100) {
-    
-                            $response = [
-                                'courier_name' => $response->courier_name,
-                                'nik' => $response->nik,
-                                'type_courier' => $response->tipe_courier,
-                                'area' => $response->area,
-                                'zone' => $response->zone,
-                                'no_tlp' => $response->no_tlp,
-                                'location' => $response->location,
-                                'id_courier' => $response->id_courier,
-                                'cod_display' => $cod_data['cod_display'],
-                                'total_awb' => $cod_data['total_awb'],
-                                'display_undelivered' => $cod_data['display_undelivered'],
-                                'undelivered' => $cod_data['display_undelivered'],
-                                'runsheet_date' => $cod_data['runsheet_date'],
-                                'dri' => $get_no_runsheet,
-                                'dl' => $status_awb->delivered,
-                                'undel' => $status_awb->undelivered,
-                                'other' => $status_awb->other,
+        // Hilangkan duplikat tanggal & gabung jadi string
+        $unique_dates = array_unique($runsheet_dates);
+        $combined_dates = implode(', ', $unique_dates);
 
-    
-                            ];
-                        } else {
-                            $response = [
-                                'remarks' => "Tidak bisa di proses karena runsheet ini masih ada paket OTS!"
-                            ];
-                        }
-                       
-                    }
+        $cod_data = [
+            'cod_display' => $total_amount,
+            'display_undelivered' => $total_cod_undelivered,
+            'total_awb' => $total_qty_awb,
+            'runsheet_date' => $combined_dates,
+        ];
+
+        print_r($results);
+        print_r($cod_data);
+    }
 
 
-                } else {
+    public function get_courier_data()
+    {
+        $courier_id = $this->input->post('courier_id');
+        $date_from = $this->input->post('date_from');
+        $date_thru = $this->input->post('date_thru');
 
+        // Get courier info
+        $courier = $this->Courier_model->get_by_id($courier_id);
 
-                    $response = [
-                        'remarks' => "Kurir tidak ditemukan, silahkan periksa kembali!",
+        if (!$courier) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Kurir tidak ditemukan'
+            ]);
+            return;
+        }
 
-                    ];
-                }
+        // Get runsheet data
+        $this->db->select('
+            no_runsheet,
+            DATE(create_date) as create_date,
+            COUNT(awb) as total_awb,
+            MIN(status_pod) as status_pod,
+            SUM(CASE WHEN status_cod IS NOT NULL THEN 1 ELSE 0 END) as success_count,
+            COUNT(awb) as total_count
+        ');
+        $this->db->from('checker');
+        $this->db->where('id_courier', $courier_id);
+        $this->db->where('DATE(create_date) >=', $date_from);
+        $this->db->where('DATE(create_date) <=', $date_thru);
+        $this->db->group_by('no_runsheet');
+        $this->db->order_by('create_date', 'DESC');
 
-            } else {
+        $runsheets = $this->db->get()->result_array();
 
-                $response = [
-                    'remarks' => "Detail cod tidak ditemukan, silahkan periksa kembali!",
-
-                ];
-                print_r($get_detail_cod);
+        // Count runsheet yang bisa disetorkan
+        $runsheet_ready = 0;
+        foreach ($runsheets as &$rs) {
+            // Logic: bisa disetorkan kalau semua AWB sudah ada status_cod
+            $rs['can_submit'] = ($rs['success_count'] == $rs['total_count']);
+            if ($rs['can_submit']) {
+                $runsheet_ready++;
             }
         }
-        ;
-        header('Content-Type: application/json');
-        echo json_encode($response);
-        exit;
-        // print_r($this->Checker_model->_select_runsheet($id_courier,$start_date,$end_date));
-    // print_r ($this->Pod_model->_get_no_runsheet_by_id($id_courier,$start_date,$end_date));
+
+        // Prepare courier data
+        $courier_data = [
+            'id_courier' => $courier->id_courier,
+            'courier_name' => $courier->courier_name,
+            'no_tlp' => $courier->no_tlp,
+            'photo' => $courier->id_courier . '.jpg', // Sesuaikan dengan nama file foto
+            'runsheet_ready' => $runsheet_ready,
+            'runsheet_total' => count($runsheets)
+        ];
+
+        echo json_encode([
+            'success' => true,
+            'courier' => $courier_data,
+            'runsheets' => $runsheets
+        ]);
     }
-    // public function search_courier()
-    // {
-    //     // $no_runsheet = "BDO/DRI/15150803";   
-    //     $no_runsheet =  $this->input->post('no_runsheet');
-    //     // var_dump($no_runsheet);    
 
-    //     if ($this->Pod_model->_get_no_runsheet($no_runsheet)) {
-
-    //         $response = [
-    //             'remarks' => "No Runsheet sudah ada!",
-    //         ];
-
-    //     } else {
-
-    //         $get_detail_cod = $this->Pod_model->get_detail_cod($no_runsheet);
-    //         if ($get_detail_cod) {
-    //             $id_courier = $get_detail_cod->id_courier;
-    //             // var_dump($get_detail_cod);
-
-    //             $cod_data = [
-    //                 'cod_display' => $get_detail_cod->amount,
-    //                 'display_undelivered' => $get_detail_cod->cod_undelivered,
-    //                 'total_awb' => $get_detail_cod->qty_awb,
-    //                 'runsheet_date' =>
-    //                     date('Y-m-d', strtotime(
-    //                         $get_detail_cod->runsheet_date
-    //                     )),
-    //             ];
-    //             if ($response = $get_detail_cod = $this->Courier_model->search_courier($id_courier)) {
-
-    //                 $runsheet_date = $cod_data['runsheet_date'];
-    //                 $progress = $this->Checker_model->_get_progress($id_courier, $runsheet_date);
-    //                 $persentase_progres = ($progress->success_pod / ($progress->success_pod + $progress->in_progress_pod)) * 100;
-    //                 $get_status_pod=$this->Pod_model->get_status_pod($no_runsheet);
-    //                 $status_awb=$this->Pod_model->get_status_awb($no_runsheet);
-    //                 if(empty($get_status_pod->status_pod)){
-    //                     $response = [
-    //                         'remarks' => "Status POD belum di submit, hubungi tim checker POD",
-    
-    //                     ];
-    //                 }else{
-    //                     if ($persentase_progres == 100) {
-    
-    //                         $response = [
-    //                             'courier_name' => $response->courier_name,
-    //                             'nik' => $response->nik,
-    //                             'type_courier' => $response->tipe_courier,
-    //                             'area' => $response->area,
-    //                             'zone' => $response->zone,
-    //                             'no_tlp' => $response->no_tlp,
-    //                             'location' => $response->location,
-    //                             'id_courier' => $response->id_courier,
-    //                             'cod_display' => $cod_data['cod_display'],
-    //                             'total_awb' => $cod_data['total_awb'],
-    //                             'display_undelivered' => $cod_data['display_undelivered'],
-    //                             'undelivered' => $cod_data['display_undelivered'],
-    //                             'runsheet_date' => $cod_data['runsheet_date'],
-    //                             'dri' => $no_runsheet,
-    //                             'dl' => $status_awb->delivered,
-    //                             'undel' => $status_awb->undelivered,
-
-    
-    //                         ];
-    //                     } else {
-    //                         $response = [
-    //                             'remarks' => "Tidak bisa di proses karena runsheet ini masih ada paket OTS!"
-    //                         ];
-    //                     }
-                       
-    //                 }
+    public function get_courier_info()
+    {
+        $courier_id = $this->input->post('courier_id');
+        $date_from = $this->input->post('date_from');
+        $date_thru = $this->input->post('date_thru');
 
 
-    //             } else {
+
+        // Get courier data
+        $courier = $this->db->get_where('courier', ['id_courier' => $courier_id])->row();
+
+        if (!$courier) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Kurir tidak ditemukan'
+            ]);
+            return;
+        }
+
+        // Count runsheet total dan ready
+
+        $runsheets = $this->Pod_model->get_runsheet_paid_pod($courier_id, $date_from, $date_thru);
+        $runsheet_total = count($runsheets);
+        $runsheet_ready = 0;
+
+        foreach ($runsheets as $rs) {
+            // Ready kalau semua AWB sudah completed
+            if ($rs['total_awb'] == $rs['completed_awb']) {
+                $runsheet_ready++;
+            }
+        }
+
+        $nominal = $this->Pod_model->get_nominal_paid_pod($courier_id, $date_from, $date_thru);
 
 
-    //                 $response = [
-    //                     'remarks' => "Kurir tidak ditemukan, silahkan periksa kembali!",
+        // print_r($nominal);
+        // var_dump("heh");
 
-    //                 ];
-    //             }
 
-    //         } else {
 
-    //             $response = [
-    //                 'remarks' => "Detail cod tidak ditemukan, silahkan periksa kembali!",
+        echo json_encode([
+            'success' => true,
+            'courier' => [
+                'id_courier' => $courier->id_courier,
+                'courier_name' => $courier->courier_name,
+                'no_tlp' => $courier->no_tlp,
+                'photo' => $courier->id_courier . '.jpg',
+                'runsheet_ready' => $runsheet_ready,
+                'runsheet_total' => $runsheet_total,
+                'nominal' => $nominal->amount ?? 0,
+                'delivered' => $nominal->delivered ?? 0,
+                'nominalUndel' => $nominal->total_undelivered ?? 0,
+                'dateFrom' => $date_from,
+                'dateThru' => $date_thru,
 
-    //             ];
-    //             print_r($get_detail_cod);
-    //         }
-    //     }
-    //     ;
-    //     header('Content-Type: application/json');
-    //     echo json_encode($response);
-    //     exit;
-    // }
-    public function poin_hrs($runsheet_date, $create_date,$no_runsheet)
+            ]
+        ]);
+    }
+    public function get_runsheet($id_courier, $date_from, $date_thru, $create_date)
+    {
+        $result = [];
+        $create_date_only = date('Y-m-d', strtotime($create_date));
+
+        $start = new DateTime($date_from);
+        $end = new DateTime($date_thru);
+        $end->modify('+1 day');
+
+        for ($date = clone $start; $date < $end; $date->modify('+1 day')) {
+
+            $tanggal = $date->format('Y-m-d');
+
+            if ($tanggal > $create_date_only)
+                continue;
+
+            $rs = $this->Checker_model->get_runsheet($id_courier, $tanggal);
+            if (!$rs)
+                continue;
+
+            $result[] = [
+                'tanggal' => $tanggal,
+                'no_runsheet' => $rs->no_runsheet,
+
+            ];
+        }
+
+        return $result;
+    }
+
+    public function poin_hrs($create_date, $runsheet_date, $no_runsheet)
     {
         $create_date_only = date('Y-m-d', strtotime($create_date));
-        $create_time = date('H:i:s', strtotime($create_date));
 
-        
-        // Validasi poin
+        $poin_obj = $this->Leaderboard_model->get_total_poin_courier($no_runsheet);
+        $total_poin = isset($poin_obj->total_poin) ? (int) $poin_obj->total_poin : 0;
+
+        $poin = 0;
+        $minus = 0;
+
         if ($runsheet_date == $create_date_only) {
+            // 🔥 HARI INI
             $poin = 30;
-        } else {
-            // Tambahkan 1 hari ke runsheet_date untuk dibandingkan
-            $next_day = date('Y-m-d', strtotime('+1 day', strtotime($runsheet_date)));
 
-            if ($next_day == $create_date_only) {
-                if ($create_time < '10:00:00') {
-                    $poin = 10;
-                } else{
-                    $poin_obj = $this->Leaderboard_model->get_total_poin_courier($no_runsheet);
-                $poin = isset($poin_obj->total_poin) ? (int) $poin_obj->total_poin : 0; 
-                }
-            } else {
-                $poin_obj = $this->Leaderboard_model->get_total_poin_courier($no_runsheet);
-                $poin = isset($poin_obj->total_poin) ? (int) $poin_obj->total_poin : 0;
-            }
+        } elseif ($runsheet_date == date('Y-m-d', strtotime('-1 day', strtotime($create_date_only)))) {
+            // 🔥 KEMARIN
+            $minus = $total_poin;
         }
 
-        return $poin;
+        return [
+            'tanggal' => $runsheet_date,
+            'poin' => $poin,
+            'minus' => $minus,
+            'id_leaderboard' => $poin_obj->id_leaderboard ?? null
+        ];
     }
 
-    public function get_total_poin_courier(){
-        $no_runsheet="BDO/DRI/15405122";
-        $poin=$this->Leaderboard_model->get_total_poin_courier($no_runsheet);
-        var_dump($poin);
-    }
 
-    public function create_pod()
+
+
+
+    public function payment_cod()
     {
-
-        $no_runsheet = $this->input->post('dri');
-
-        if ($this->Pod_model->_get_no_runsheet($no_runsheet)) {
-            $this->session->set_flashdata('notify', [
-                'message' => 'No Runsheet sudah ada',
-                'type' => 'danger'
-            ]);
-            redirect('pod');
-        } else {
-
-            $runsheet_date = $this->input->post('runsheet_date'); // format: 'Y-m-d'
-            $create_date = date('Y-m-d H:i:s');
-            // $create_date = "2025-08-18 09:53:36"; 
-
-            $poin_hrs = $this->poin_hrs($runsheet_date, $create_date,$no_runsheet);            
-            
-
-
-
-            // status cod
-            $cod_paid = $this->input->post('cod_called') + $this->input->post('transfer');
-            $total_cod = $this->input->post('total_cod');
-            $total_undelivered = $this->input->post('undelivered');
-            $total_paid_cod = $total_cod - $total_undelivered;
-
-
-            if ($cod_paid >= $total_paid_cod) {
-                $status_cod = "L";
-                $closing_by = "Closing_hrs_by";
-            } else {
-                $status_cod = "BL";
-                $closing_by = "create_hrs_by";
-            }
-
-            $data_pod = array(
-                $closing_by => $this->input->post('id_user'),
-                'id_courier' => $this->input->post('display_id_courier'),
-                'persentase_cod' => $this->input->post('persentase_cod'),
-                'cod_paid' => $cod_paid,
-                'minus_cod' => $this->input->post('plus_minus'),
-                'no_runsheet' => $no_runsheet,
-                'poin_hrs' => $poin_hrs,
-                'total_paid_cod' => $total_paid_cod,
-                'paid_off_date' => $create_date,
-                'status_cod' => $status_cod,
-                'transfer' => $this->input->post("transfer")
-            );
-
-            $this->Leaderboard_model->update_poin_hrs($poin_hrs,$no_runsheet);
-            $this->Leaderboard_model->refresh_mv_leaderboard_summary();
-
-            try {
-                if ($this->Pod_model->_add_checker_pod($data_pod)) {
-                    $this->session->set_flashdata('notify', [
-                        'message' => 'COD POD berhasil di tambahkan!!',
-                        'type' => 'success'
-                    ]);
-                }
-                redirect('pod');
-            } catch (Exception $e) {
-                $this->session->set_flashdata('notify', [
-                    'message' => 'Terjadi kesalahan saat menambahkan COD POD: ' . $e->getMessage(),
-                    'type' => 'danger'
-                ]);
-                redirect('pod');
-            }
-
-        }
-
-    }
-    public function edit_pod()
-    {
-
-        $no_runsheet = $this->input->post('dri');
-
-
-
-        $id_checker_notes = $this->input->post('id_checker_notes'); // format: 'Y-m-d'
-        $runsheet_date = $this->input->post('runsheet_date'); // format: 'Y-m-d'
-        
+        $courier_id = $this->input->post('courier_id');
+        $date_from = $this->input->post('date_from');
+        $date_thru = $this->input->post('date_thru');
+        $payment_method = $this->input->post('payment_method'); // cod / transfer
+        $cod = (int) $this->input->post('cod');
+        $transfer = (int) $this->input->post('transfer');
         $create_date = date('Y-m-d H:i:s');
-        $poin_hrs = $this->poin_hrs($runsheet_date, $create_date,$no_runsheet);    
+
        
-        $cod_paid = (int)$this->input->post('cod_called') + (int)$this->input->post('transfer');
-        $total_cod =(int) $this->input->post('total_cod');
-        $total_undelivered =(int) $this->input->post('undelivered');
-        $total_paid_cod = $total_cod - $total_undelivered;
-
-
-
-
-        if ($cod_paid >= $total_paid_cod) {
-            $status_cod = "L";
-            $closing_by = "Closing_hrs_by";
-        } else {
-            $status_cod = "BL";
-            $closing_by = "create_hrs_by";
-        }
-
-        $data_pod = array(
-            $closing_by => $this->input->post('id_user'),
-            'persentase_cod' => $this->input->post('persentase_cod'),
-            'cod_paid' => $cod_paid,
-            'minus_cod' => $this->input->post('plus_minus'),
-            'poin_hrs' => $poin_hrs,
-            'total_paid_cod' => $total_paid_cod,
-            'paid_off_date' => $create_date,
-            'status_cod' => $status_cod,
-            'transfer' => $this->input->post("transfer")
+        $runsheet_list = $this->get_runsheet(
+            $courier_id,
+            $date_from,
+            $date_thru,
+            $create_date
         );
 
-        // var_dump($data_pod);
-        // var_dump($poin_hrs);
-        $this->Leaderboard_model->update_poin_hrs($poin_hrs,$no_runsheet);
-        $this->Leaderboard_model->refresh_mv_leaderboard_summary();
+        $final = [];
 
+        foreach ($runsheet_list as $row) {
 
-        try {
-            if ($this->Pod_model->_edit_checker_pod($id_checker_notes, $data_pod)) {
-                $this->session->set_flashdata('notify', [
-                    'message' => 'COD POD berhasil di tambahkan!!',
-                    'type' => 'success'
-                ]);
-            }
-            redirect('pod');
-        } catch (Exception $e) {
-            $this->session->set_flashdata('notify', [
-                'message' => 'Terjadi kesalahan saat menambahkan COD POD: ' . $e->getMessage(),
-                'type' => 'danger'
-            ]);
-            redirect('pod');
+            $detail = $this->poin_hrs(
+                $create_date,
+                $row['tanggal'],
+                $row['no_runsheet']
+            );
+
+            $final[] = array_merge(
+                ['no_runsheet' => $row['no_runsheet']],
+                $detail
+            );
+        }
+        
+
+        $data_poin = []; // harus array of arrays
+
+        foreach ($final as $row) {
+            if (!isset($row['id_leaderboard']))
+                continue; // aman
+
+            $data_poin[] = [
+                'id_courier' => $courier_id,
+                'id_leaderboard' => $row['id_leaderboard'],
+                'no_runsheet' => $row['no_runsheet'],
+                'create_date' => $create_date,
+                'hrs' => $row['poin'],
+                'minus_poin' => $row['minus']
+            ];
         }
 
 
+        if (!empty($data_poin)) {
+            $rows_updated = $this->db->update_batch('leaderboard', $data_poin, 'id_leaderboard');
+            $runsheets = array_unique(array_column($final, 'no_runsheet'));
+            foreach ($runsheets as $no_runsheet) {
+                $this->Leaderboard_model->refresh_total_poin($no_runsheet);
+            }
+            $this->Leaderboard_model->refresh_total_poin_all();
+            $this->Leaderboard_model->refresh_mv_leaderboard_summary();
 
+            if ($rows_updated) {                
+            } else {                
+                return $this->response_notify(
+                    'danger',
+                    'Gagal update, cek data atau key id_leaderboard.'
+                );
+            }
+        } else {
+            
+            return $this->response_notify(
+                'danger',
+                'Tidak ada poin data yang bisa di-update.'
+            );
+        }
+        // ===============================
+        // VALIDASI DASAR
+        // ===============================
+        $paid_amount = ($payment_method === 'cod') ? $cod : $transfer;
+
+        if ($paid_amount <= 0) {
+            return $this->response_notify(
+                'danger',
+                'Nominal pembayaran tidak valid'
+            );
+        }
+
+        if (!in_array($payment_method, ['cod', 'transfer'])) {
+            return $this->response_notify(
+                'danger',
+                'Metode pembayaran tidak valid'
+            );
+        }
+
+        // ===============================
+        // CEK OVERPAID (HARD STOP)
+        // ===============================
+        if (
+            $this->Pod_model->has_overpaid_runsheet(
+                $courier_id,
+                $date_from,
+                $date_thru
+            )
+        ) {
+            return $this->response_notify(
+                'danger',
+                'Terdapat runsheet yang sudah overpaid'
+            );
+        }
+
+        // ===============================
+        // AMBIL RUNSHEET YANG MASIH PERLU DIBAYAR
+        // ===============================
+        $runsheets = $this->Pod_model->get_unpaid_runsheets(
+            $courier_id,
+            $date_from,
+            $date_thru
+        );
+
+        if (empty($runsheets)) {
+            return $this->response_notify(
+                'info',
+                'Tidak ada runsheet yang perlu dibayar'
+            );
+        }
+
+        // ===============================
+        // PROSES PEMBAYARAN (TRANSACTION)
+        // ===============================
+        $this->db->trans_begin();
+
+        $sisa_uang = $paid_amount;
+        $used = 0;
+
+        $next_sequence=$this->Pod_model->get_sequence($courier_id);
+        foreach ($runsheets as $rs) {
+             // Hitung sequence terakhir untuk courier hari ini
+
+            if ($sisa_uang <= 0)
+                break;
+
+            $sisa_tagihan = $rs->total_cod - $rs->already_paid;
+            if ($sisa_tagihan <= 0)
+                continue;
+
+            $bayar = min($sisa_uang, $sisa_tagihan);
+
+            $this->db->insert('runsheet_payment', [
+                'no_runsheet' => $rs->no_runsheet,
+                'id_courier' => $courier_id,
+                'payment_date' => date('Y-m-d'),
+                'cod_paid' => ($payment_method === 'cod') ? $bayar : 0,
+                'transfer' => ($payment_method === 'transfer') ? $bayar : 0,
+                'status' => 'DRAFT',
+                'created_by' => $this->session->userdata('id_user'),
+                'created_at' => date('Y-m-d H:i:s'),
+                'sequence_hrs' => $next_sequence,
+
+            ]);
+            $next_sequence++; 
+            // 🔥 AUTO CLOSE CHECK
+            $summary = $this->Pod_model
+                ->get_runsheet_summary($rs->no_runsheet);
+
+            if ($summary && $summary->total_paid >= $summary->total_cod) {
+                $this->Pod_model->auto_close_runsheet(
+                    $rs->no_runsheet,
+                    $this->session->userdata('id_user')
+                );
+            }
+
+            $sisa_uang -= $bayar;
+            $used += $bayar;
+        }
+
+
+        // ===============================
+        // OVERPAID → SIMPAN TERPISAH
+        // ===============================
+        if ($sisa_uang > 0) {
+            $this->Pod_model->insert_courier_overpaid($courier_id,$sisa_uang);           
+        }
+
+        // ===============================
+        // COMMIT / ROLLBACK
+        // ===============================
+        if ($this->db->trans_status() === FALSE) {
+            $this->db->trans_rollback();
+
+            return $this->response_notify(
+                'danger',
+                'Gagal menyimpan pembayaran'
+            );
+        }
+
+        $this->db->trans_commit();
+
+        // ===============================
+        // RESPONSE KE FE
+        // ===============================
+        return $this->response_notify(
+            'success',
+            'Pembayaran berhasil disimpan',
+            [
+                'paid' => $paid_amount,
+                'used' => $used,
+                'overpaid' => $sisa_uang
+            ],
+            base_url('pod/detail_pod')
+        );
     }
+    public function testing(){
+         // ===============================
+         return $this->response_notify(
+            'success',
+            'Pembayaran berhasil disimpan',
+            [
+                'paid' => "hehe",
+                
+            ],
+            base_url('pod/detail_pod')
+        );
+    }
+    private function response_notify(
+        $status,
+        $message,
+        $data = [],
+        $redirect = null
+    ) {
+        echo json_encode([
+            'status' => $status,
+            'message' => $message,
+            'data' => $data,
+            'redirect' => $redirect
+        ]);
+        exit;
+    }
+
+
+
+
 
 
 }

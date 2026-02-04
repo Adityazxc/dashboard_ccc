@@ -1,3 +1,12 @@
+
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+
+
+
 <div class="card card-raised">
     <div class="card-header  text-white px-4">
         <div class="d-flex justify-content-between align-item-center">
@@ -20,6 +29,7 @@
                 <thead>
                     <tr>
                         <td>No</td>
+                        <td>Photo</td>
                         <td>Id Kurir</td>
                         <td>Nama Kurir</td>
                         <td>NIK</td>
@@ -28,6 +38,7 @@
                         <td>Area</td>
                         <td>Zone</td>
                         <td>No Tlp</td>
+                        <td>Zona Kerja</td>
                         <td>Action</td>
                     </tr>
                 </thead>
@@ -38,6 +49,59 @@
         </div>
     </div>
 </div>
+
+<link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+
+<div class="modal fade" id="courierImageModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Foto Kurir</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center">
+        <img id="courierImagePreview" src="" class="img-fluid rounded">
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function showCourierImage(src) {
+    const img = document.getElementById('courierImagePreview');
+    const defaultImg = "<?= base_url('uploads/image_courier/courier.png') ?>";
+
+    img.onerror = function () {
+        this.onerror = null; // cegah infinite loop
+        this.src = defaultImg;
+    };
+
+    img.src = src;
+
+    const modal = new bootstrap.Modal(document.getElementById('courierImageModal'));
+    modal.show();
+}
+</script>
+
+
+<style>
+    .courier-img {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+    cursor: pointer;
+    border: 2px solid #ddd;
+    transition: 0.2s;
+}
+
+.courier-img:hover {
+    transform: scale(1.1);
+    border-color: #0d6efd;
+}
+
+</style>
 <?php $this->load->view('courier_page/modal_add_courier'); ?>
 <?php $this->load->view('courier_page/edit_courier'); ?>
 <script>
@@ -73,14 +137,17 @@
             }
         });
     });  
-    function deletecourier(id, username) {
+    function deletecourier(id, username,courier_id) {
         $('#idCourierDelete').val(id);
+        $('#courier_id_delete').val(courier_id);        
         $('#message-delete-user').text('Apakah anda yakin akan akan menghapus user ' + username + ' ?');
     }
   
-    function editCourier(id,id_courier, courier_name, nik, tipe_courier,location,area,zone,no_tlp) {
+    function editCourier(id,id_courier,work_zone, courier_name, nik, tipe_courier,location,area,zone,no_tlp) {
         $('#message-edit-user').text('Anda akan merubah data dari kurir ' + courier_name + ' ?');
         $('#idEdit').val(id);
+        
+        $("#work_zone_edit").val(work_zone).trigger("change");        
         $('#idCourierEdit').val(id_courier);
         $('#courierNameEdit').val(courier_name);
         $('#nikEdit').val(nik);
@@ -110,6 +177,8 @@
                     <div class="row">
                         <input id="idCourierDelete" name="idCourierDelete" type="hidden" class="form-control"
                             placeholder="Insert Name Product" autocomplete="off" required>                      
+                        <input id="courier_id_delete" name="courier_id_delete" type="hidden" class="form-control"
+                            placeholder="Insert Name Product" autocomplete="off" required>                      
 
                     </div>                   
 
@@ -124,3 +193,4 @@
 
     </div>
 </div>
+

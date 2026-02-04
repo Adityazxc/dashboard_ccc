@@ -12,8 +12,8 @@
         <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
         <?php
-        $full_access = in_array($role, ['BPS', 'Super User', 'HC', 'PAO', 'CS', 'CCC', 'Kepala Cabang']);
-        $zone_only = in_array($role, ['Kepala Cabang BDO2', 'BBP', 'Admin']);
+        $full_access = in_array($role, ['BPS', 'Super User', 'HC', 'PAO', 'CS', 'CCC', 'Kepala Cabang']);        
+        $zone_only = in_array($role, ['Kepala Cabang BDO2', 'BBP', 'Admin','Admin BDO2','POD']);
         $get_origins_array = json_decode($get_origins, true);
 
         // Ambil origin code dari object jika zone_only
@@ -156,16 +156,17 @@
                 <thead>
                     <tr>
                         <th>No</th>
-                        <th>Courier</th>
-                        <th>Status COD</th>
-                        <th>Create by</th>
-                        <th>No Runsheet</th>                        
-                        <th>Progress Paid</th>
-                        <th>Cod Plus Minus</th>
-                        <th>Runsheet Date</th>
-                        <th>Poin</th>
-                        <th>Create Date</th>                        
+                        <th>Courier ID</th>
+                        <th>No Runsheet</th>
+                        <th>Runsheet Date</th>                      
+                        <th>POD Create Date</th>                      
+                        <th>POD Create By</th>                      
+                        <th>POD Closing By</th>                      
+                        <th>Progres Setor</th>
+                        <th>Status Setoran</th>
+                        <th>Selisih Setoran</th>
                         <th>Action</th>
+                 
                     </tr>
                 </thead>
                 <tbody>
@@ -176,13 +177,12 @@
     </div>
 </div>
 <script>
-    $(document).ready(function () {
-        console.log("Init datatable with URL: <?= base_url('pod/getdatatables_cod_pod') ?>");
+    $(document).ready(function () {        
         var role = "<?= $role ?>";
         var table = $('#table_top_courier').DataTable({
             "processing": true,
             "serverSide": true,
-            "pageLength": 3,
+            "pageLength": 5,
             "lengthMenu": [[5, 10, 25, 50, 100], [5, 10, 25, 50, 100]],
             "ajax": {
                 "url": "<?= base_url('pod/getdatatables_cod_pod') ?>",
@@ -198,7 +198,7 @@
             },
             "columnDefs": [
                 {
-                    "targets": [5],
+                    "targets": [0],
                     "orderable": false,
                     "className": 'text-center'
                 }
@@ -211,4 +211,17 @@
             table.ajax.reload(null, false);
         });
     });
+
+
+    // function list_data(){
+    //     var formData = {
+    //         year: selectedYear,
+    //         dateFrom: $('[name="dateFrom"]').val(),
+    //         dateThru: $('[name="dateThru"]').val(),
+    //         origin: $('[name="origin"]').val().trim(),
+    //         zone: $('[name="zone"]').val().trim(),
+    //     };
+    // }
+    
+    
 </script>

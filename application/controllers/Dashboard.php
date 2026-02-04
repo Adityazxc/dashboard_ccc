@@ -1,6 +1,8 @@
 <?php
 
 defined('BASEPATH') or exit('No direct script access allowed');
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class Dashboard extends CI_Controller
 {
@@ -9,7 +11,7 @@ class Dashboard extends CI_Controller
     {
         parent::__construct();
         $this->load->model('Admin_model');
-        // $this->load->model('User_model');        
+        $this->load->model('Export_model');
         $this->load->model('Checker_model');
         $this->load->library('session');
         $this->load->helper('url');
@@ -27,20 +29,25 @@ class Dashboard extends CI_Controller
         $get_origins = json_encode($this->Admin_model->_get_origins());
         if ($password == "e10adc3949ba59abbe56e057f20f883e") {
             redirect('reset_password/input_password');
-        } else if ($this->session->userdata('logged_in') && (
-            $user_role == "Koordinator" 
-            || $user_role == "Admin" 
-            || $user_role == "Super User" 
-            || $user_role == "CS" 
-            || $user_role == "CCC"
-            || $user_role == "BPS"
-            || $user_role == "HC"
-            || $user_role == "Kepala Cabang BDO2"
-            || $user_role == "Kepala Cabang"
-            || $user_role == "BBP"
-            || $user_role == "PAO"
-            
-            )) {
+        } else if (
+            $this->session->userdata('logged_in') && (
+                $user_role == "Koordinator"
+                || $user_role == "Admin"
+                || $user_role == "Super User"
+                || $user_role == "CS"
+                || $user_role == "CCC"
+                || $user_role == "BPS"
+                || $user_role == "HC"
+                || $user_role == "Kepala Cabang BDO2"
+                || $user_role == "Kepala Cabang"
+                || $user_role == "BBP"
+                || $user_role == "PAO"
+                || $user_role == "POD"
+                || $user_role == "Admin BDO2"
+                || $user_role == "Koordinator BDO2"
+
+            )
+        ) {
             $data['title'] = 'Dashboard Admin';
             $data['page_name'] = 'dashboard_admin';
             $data['get_origins'] = $get_origins;
@@ -54,6 +61,157 @@ class Dashboard extends CI_Controller
         }
 
     }
+
+    public function export_revision()
+    {
+        $dateFrom = $this->input->post('dateFrom');
+        $dateThru = $this->input->post('dateThru');
+    
+        $filters = [
+            'dateFrom' => $dateFrom,
+            'dateThru' => $dateThru,
+            'action' => "revision",
+        ];
+    
+        $data = $this->Export_model->getDataNotApprove($filters);
+    
+        // 1️⃣ Buat folder sementara
+        $tmpDir = FCPATH . 'uploads/tmp_export/export_' . time();
+        if (!is_dir($tmpDir)) mkdir($tmpDir, 0777, true);
+    
+        // 2️⃣ Buat subfolder untuk images_revision
+        $imgDir = $tmpDir . '/images_revision';
+        if (!is_dir($imgDir)) mkdir($imgDir, 0777, true);
+    
+        // 3️⃣ Generate Excel
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+    
+        $sheet->setCellValue('A1', 'No');
+        $sheet->setCellValue('B1', 'AWB');
+        $sheet->setCellValue('C1', 'ID KURIR');
+        $sheet->setCellValue('D1', 'NAMA KURIR');
+        $sheet->setCellValue('E1', 'ZONA');
+        $sheet->setCellValue('F1', 'FOTO URL');
+    
+        $row = 2;
+        $no = 1;
+        foreach ($data as $d) {
+            $sheet->setCellValue('A' . $row, $no++);
+            $sheet->setCellValue('B' . $row, $d['awb']);
+            $sheet->setCellValue('C' . $row, $d['id_courier']);
+            $sheet->setCellValue('D' . $row, $d['courier_name']);
+            $sheet->setCellValue('E' . $row, $d['zone']);
+            $sheet->setCellValue('F' . $row, $d['url_photo']);
+            $row++;
+        }
+    
+        foreach (range('A', 'F') as $col) $sheet->getColumnDimension($col)->setAutoSize(true);
+    
+        // Simpan Excel ke folder sementara
+        $excelFile = $tmpDir . '/Summary_POD.xlsx';
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $writer->save($excelFile);
+    
+        // 4️⃣ Copy semua img_revision ke folder images_revision
+        foreach ($data as $d) {
+            if (!empty($d['url_revision'])) {
+                $source = FCPATH . $d['url_revision'];
+                if (file_exists($source)) {
+                    $dest = $imgDir . '/' . basename($d['url_revision']);
+                    copy($source, $dest);
+                }
+            }
+        }
+    
+        // 5️⃣ Buat ZIP dari folder sementara (Excel + gambar)
+        $zip = new ZipArchive();
+        $zipFile = $tmpDir . '.zip';
+        if ($zip->open($zipFile, ZipArchive::CREATE) === TRUE) {
+            $files = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($tmpDir, RecursiveDirectoryIterator::SKIP_DOTS),
+                RecursiveIteratorIterator::LEAVES_ONLY
+            );
+    
+            foreach ($files as $file) {
+                if (!$file->isDir()) {
+                    $filePath = $file->getRealPath();
+                    $relativePath = substr($filePath, strlen($tmpDir) + 1); // path relatif di ZIP
+                    $zip->addFile($filePath, $relativePath);
+                }
+            }
+            $zip->close();
+        }
+    
+        // 6️⃣ Kirim ZIP ke browser
+        header('Content-Type: application/zip');
+        header('Content-Disposition: attachment; filename="export_' . date('Y-m-d') . '.zip"');
+        header('Content-Length: ' . filesize($zipFile));
+        readfile($zipFile);
+    
+        // 7️⃣ Hapus folder sementara & ZIP
+        $it = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($tmpDir, RecursiveDirectoryIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST
+        );
+        foreach ($it as $file) {
+            if ($file->isDir()) rmdir($file->getRealPath());
+            else unlink($file->getRealPath());
+        }
+        rmdir($tmpDir);
+        unlink($zipFile);
+    }
+    
+    
+
+    public function export_not_approve()
+    {
+
+        $dateFrom = $this->input->post('dateFrom');
+        $dateThru = $this->input->post('dateThru');
+
+        $filters = [
+            'dateFrom' => $dateFrom,
+            'dateThru' => $dateThru,
+            'action' => "Tidak Sesuai",
+
+        ];
+        $data = $this->Export_model->getDataNotApprove($filters);
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $sheet->setCellValue('A1', 'No');
+        $sheet->setCellValue('B1', 'AWB');
+        $sheet->setCellValue('C1', 'ID KURIR');
+        $sheet->setCellValue('D1', 'NAMA KURIR');
+        $sheet->setCellValue('E1', 'ZONA');
+        $sheet->setCellValue('F1', 'FOTO URL');
+
+        $row = 2;
+        $no = 1;
+        foreach ($data as $d) {
+            $sheet->setCellValue('A' . $row, $no++);
+            $sheet->setCellValue('B' . $row, $d['awb']);
+            $sheet->setCellValue('C' . $row, $d['id_courier']);
+            $sheet->setCellValue('D' . $row, $d['courier_name']);
+            $sheet->setCellValue('E' . $row, $d['zone']);
+            $sheet->setCellValue('F' . $row, $d['url_photo']);
+            $row++;
+        }
+
+        foreach (range('A', 'F') as $col)
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        $date = date('Y-m-d');
+
+        $writer = new Xlsx($spreadsheet);
+        $filename = $date . ' Summary POD Tidak Sesuai-.xlsx';
+
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header("Content-Disposition: attachment; filename=\"$filename\"");
+        $writer->save('php://output');
+
+    }
     public function not_approve()
     {
         $user_role = $this->session->userdata('role');
@@ -63,21 +221,25 @@ class Dashboard extends CI_Controller
         $get_origins = json_encode($this->Admin_model->_get_origins());
         if ($password == "e10adc3949ba59abbe56e057f20f883e") {
             redirect('reset_password/input_password');
-        } else if ($this->session->userdata('logged_in') && (
-            $user_role == "Koordinator" 
-            || $user_role == "Admin" 
-            || $user_role == "Super User" 
-            || $user_role == "CS" 
-            || $user_role == "CCC"
-            || $user_role == "BPS"
-            || $user_role == "HC"
-            || $user_role == "Kepala Cabang BDO2"
-            || $user_role == "Kepala Cabang"
-            || $user_role == "BBP"
-            || $user_role == "PAO"
-            
-            )) {
-                $filter = isset($_GET['filter']) ? base64_decode($_GET['filter']) : 'Semua';
+        } else if (
+            $this->session->userdata('logged_in') && (
+                $user_role == "Koordinator"
+                || $user_role == "Admin"
+                || $user_role == "Super User"
+                || $user_role == "CS"
+                || $user_role == "CCC"
+                || $user_role == "BPS"
+                || $user_role == "HC"
+                || $user_role == "Kepala Cabang BDO2"
+                || $user_role == "Kepala Cabang"
+                || $user_role == "BBP"
+                || $user_role == "PAO"
+                || $user_role == "Admin BDO2"
+                || $user_role == "Koordinator BDO2"
+
+            )
+        ) {
+            $filter = isset($_GET['filter']) ? base64_decode($_GET['filter']) : 'Semua';
 
             $data['filter'] = $filter;
             $data['title'] = 'Tidak Sesuai';
