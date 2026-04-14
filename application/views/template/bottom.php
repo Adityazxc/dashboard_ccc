@@ -28,8 +28,7 @@
 <!-- jQuery Scrollbar -->
 <script src="<?= base_url('public/js/plugin/jquery-scrollbar/jquery.scrollbar.min.js') ?>"></script>
 
-<!-- Chart JS -->
-<script src="<?= base_url('public/js/plugin/chart.js/chart.min.js') ?>"></script>
+
 
 <!-- jQuery Sparkline -->
 <script src="<?= base_url('public/js/plugin/jquery.sparkline/jquery.sparkline.min.js') ?>"></script>

@@ -6,26 +6,32 @@ class Admin_model extends CI_Model
     var $customer_column_search = array('id_user', 'account_name', 'employee_position', 'regional', 'branch', 'origin', 'zone', 'username', 'kpi', 'role', ); //set column field database for datatable searchable
     var $customer_order = array('id' => 'DESC');
 
+    public function __construct()
+    {
+        parent::__construct();
+        $this->load->database();
+        $this->db_checker = $this->load->database('checker_pod', TRUE);
+    }
     private function _getdatatables_customer()
     {
         //
-        $this->db->select('*');
-        // $this->db->order_by('id_user','DESC');
-        // $this->db->where('username IS NOT NULL ');   
-        $this->db->from('users');
+        $this->db_checker->select('*');
+        // $this->db_checker->order_by('id_user','DESC');
+        // $this->db_checker->where('username IS NOT NULL ');   
+        $this->db_checker->from('users');
 
         $i = 0;
 
         if (@$_POST['search']['value']) {
             foreach ($this->customer_column_search as $item) {
                 if ($i === 0) {
-                    $this->db->group_start()
+                    $this->db_checker->group_start()
                         ->like($item, $_POST['search']['value']);
                 } else {
-                    $this->db->or_like($item, $_POST['search']['value']);
+                    $this->db_checker->or_like($item, $_POST['search']['value']);
                 }
                 if (count($this->customer_column_search) - 1 == $i) {
-                    $this->db->group_end();
+                    $this->db_checker->group_end();
                 }
                 $i++;
             }
@@ -35,28 +41,28 @@ class Admin_model extends CI_Model
 
     // public function _get()
     // {
-        public function getSourceData($dateFrom, $dateThru, $origin, $zone)
-        {
-            $where = "WHERE create_date BETWEEN ? AND ?";
-            $params = [$dateFrom . ' 00:00:00', $dateThru . ' 23:59:59'];
-        
-            if (!empty($origin)) {
-                $where .= " AND origin_code = ?";
-                $params[] = $origin;
-            }
-        
-            if (!empty($zone)) {
-                $where .= " AND zone = ?";
-                $params[] = $zone;
-            }
-        
-            $select_columns = "
+    public function getSourceData($dateFrom, $dateThru, $origin, $zone)
+    {
+        $where = "WHERE create_date BETWEEN ? AND ?";
+        $params = [$dateFrom . ' 00:00:00', $dateThru . ' 23:59:59'];
+
+        if (!empty($origin)) {
+            $where .= " AND origin_code = ?";
+            $params[] = $origin;
+        }
+
+        if (!empty($zone)) {
+            $where .= " AND zone = ?";
+            $params[] = $zone;
+        }
+
+        $select_columns = "
                 id_courier, id_checker, runsheet_date, create_date, upload_by,
                 zone, qty_awb, qty_sesuai, qty_revisi, qty_tidak_sesuai,
                 courier_name, zone_name, origin_code, role, name, username
             ";
-        
-            $sql = "
+
+        $sql = "
                 SELECT 
                     SUM(qty_sesuai) AS approve,
                     SUM(qty_tidak_sesuai) AS notApprove,
@@ -68,45 +74,45 @@ class Admin_model extends CI_Model
                     SELECT $select_columns FROM summary_checker $where
                 ) AS combined
             ";
-        
-            $finalParams = array_merge($params, $params);
-            $query = $this->db->query($sql, $finalParams);
-            $result = $query->row_array();
-        
-            // Supaya tetap cocok dengan frontend (sourceLabels & sourceCounts)
-            return [
-                [
-                    'status_checker' => 'Sesuai',
-                    'count' => (int) $result['approve']
-                ],
-                [
-                    'status_checker' => 'Tidak Sesuai',
-                    'count' => (int) $result['notApprove']
-                ],
-                [
-                    'status_checker' => 'Revisi',
-                    'count' => (int) $result['revision']
-                ]
-            ];
-        }
-        
 
-        public function getSourceDataMultiple($year, $origin, $zone)
-        {
-            $where = "WHERE YEAR(create_date) = ?";
-            $params = [$year];
-        
-            if (!empty($origin)) {
-                $where .= " AND origin_code = ?";
-                $params[] = $origin;
-            }
-        
-            if (!empty($zone)) {
-                $where .= " AND zone = ?";
-                $params[] = $zone;
-            }
-        
-            $sql = "
+        $finalParams = array_merge($params, $params);
+        $query = $this->db_checker->query($sql, $finalParams);
+        $result = $query->row_array();
+
+        // Supaya tetap cocok dengan frontend (sourceLabels & sourceCounts)
+        return [
+            [
+                'status_checker' => 'Sesuai',
+                'count' => (int) $result['approve']
+            ],
+            [
+                'status_checker' => 'Tidak Sesuai',
+                'count' => (int) $result['notApprove']
+            ],
+            [
+                'status_checker' => 'Revisi',
+                'count' => (int) $result['revision']
+            ]
+        ];
+    }
+
+
+    public function getSourceDataMultiple($year, $origin, $zone)
+    {
+        $where = "WHERE YEAR(create_date) = ?";
+        $params = [$year];
+
+        if (!empty($origin)) {
+            $where .= " AND origin_code = ?";
+            $params[] = $origin;
+        }
+
+        if (!empty($zone)) {
+            $where .= " AND zone = ?";
+            $params[] = $zone;
+        }
+
+        $sql = "
                 SELECT 
                     MONTH(create_date) AS month,
                     SUM(qty_awb) AS total_awb,
@@ -123,103 +129,103 @@ class Admin_model extends CI_Model
                 GROUP BY MONTH(create_date)
                 ORDER BY month ASC
             ";
-        
-            $finalParams = array_merge($params, $params);
-            $query = $this->db->query($sql, $finalParams)->result_array();
-        
-            // 🧠 Mapping data agar tetap menghasilkan struktur: [status_checker => [month => count]]
-            $result = [];
-        
-            foreach ($query as $row) {
-                $month = (int) $row['month'];
-                $result['Sesuai'][$month] = (int) $row['approve'];
-                $result['Tidak Sesuai'][$month] = (int) $row['notApprove'];
-                $result['Revisi'][$month] = (int) $row['revision'];
-            }
-        
-            // Lengkapi bulan kosong dengan 0
-            foreach (['Sesuai', 'Tidak Sesuai', 'Revisi'] as $status) {
-                if (!isset($result[$status])) {
-                    $result[$status] = array_fill(1, 12, 0);
-                } else {
-                    $result[$status] = array_replace(array_fill(1, 12, 0), $result[$status]);
-                }
-            }
-        
-            // Format ulang agar mirip dengan result_array()
-            $final = [];
-            foreach ($result as $status => $months) {
-                foreach ($months as $month => $count) {
-                    $final[] = [
-                        'status_checker' => $status,
-                        'month' => $month,
-                        'count' => $count
-                    ];
-                }
-            }
-        
-            return $final;
+
+        $finalParams = array_merge($params, $params);
+        $query = $this->db_checker->query($sql, $finalParams)->result_array();
+
+        // 🧠 Mapping data agar tetap menghasilkan struktur: [status_checker => [month => count]]
+        $result = [];
+
+        foreach ($query as $row) {
+            $month = (int) $row['month'];
+            $result['Sesuai'][$month] = (int) $row['approve'];
+            $result['Tidak Sesuai'][$month] = (int) $row['notApprove'];
+            $result['Revisi'][$month] = (int) $row['revision'];
         }
-        
-        
-//         public function _get_origins()
+
+        // Lengkapi bulan kosong dengan 0
+        foreach (['Sesuai', 'Tidak Sesuai', 'Revisi'] as $status) {
+            if (!isset($result[$status])) {
+                $result[$status] = array_fill(1, 12, 0);
+            } else {
+                $result[$status] = array_replace(array_fill(1, 12, 0), $result[$status]);
+            }
+        }
+
+        // Format ulang agar mirip dengan result_array()
+        $final = [];
+        foreach ($result as $status => $months) {
+            foreach ($months as $month => $count) {
+                $final[] = [
+                    'status_checker' => $status,
+                    'month' => $month,
+                    'count' => $count
+                ];
+            }
+        }
+
+        return $final;
+    }
+
+
+    //         public function _get_origins()
 // {
-//     $this->db->select('origin_name, origin_code');
-//     $this->db->group_by('origin_name, origin_code');
-//     $this->db->from('zone');
-//     return $this->db->get()->result();
+//     $this->db_checker->select('origin_name, origin_code');
+//     $this->db_checker->group_by('origin_name, origin_code');
+//     $this->db_checker->from('zone');
+//     return $this->db_checker->get()->result();
 // }
 
-public function _get_origins()
-{
-    $this->db->select('origin_code, origin_name');
-    $this->db->group_by('origin_code, origin_name');
-    $this->db->from('zone');
-    $query = $this->db->get();
-    return $query->result_array();
-}
+    public function _get_origins()
+    {
+        $this->db_checker->select('origin_code, origin_name');
+        $this->db_checker->group_by('origin_code, origin_name');
+        $this->db_checker->from('zone');
+        $query = $this->db_checker->get();
+        return $query->result_array();
+    }
 
 
 
     // public function _get_origins()
     // {
-    //     $this->db->distinct();
-    //     $this->db->select('*');
-    //     $this->db->group_by('origin_name');
-    //     $this->db->from('zone');
-    //     $query = $this->db->get();
+    //     $this->db_checker->distinct();
+    //     $this->db_checker->select('*');
+    //     $this->db_checker->group_by('origin_name');
+    //     $this->db_checker->from('zone');
+    //     $query = $this->db_checker->get();
     //     $result = $query->result();
     //     return $result;
     // }
-    
+
     // public function _get_zone($origin)
     // {
-    //     $this->db->distinct();
-    //     $this->db->select('*');
-    //     $this->db->from('zone');
-    //     $this->db->where('origin_code', $origin);
-    //     $query = $this->db->get();
+    //     $this->db_checker->distinct();
+    //     $this->db_checker->select('*');
+    //     $this->db_checker->from('zone');
+    //     $this->db_checker->where('origin_code', $origin);
+    //     $query = $this->db_checker->get();
     //     $result = $query->result();
     //     return $result;
     // }
     public function _get_zone($origin)
     {
-        $this->db->select('*');
-        $this->db->from('zone');
-        $this->db->where('origin_code', $origin);
-        
-        $query = $this->db->get();
+        $this->db_checker->select('*');
+        $this->db_checker->from('zone');
+        $this->db_checker->where('origin_code', $origin);
+
+        $query = $this->db_checker->get();
         return $query->result();
     }
-    
+
 
     public function _destination_code($zone_code)
     {
-        $this->db->distinct();
-        $this->db->select('*');
-        $this->db->from('destination_code');
-        $this->db->where('origin_code', $zone_code);
-        $query = $this->db->get();
+        $this->db_checker->distinct();
+        $this->db_checker->select('*');
+        $this->db_checker->from('destination_code');
+        $this->db_checker->where('origin_code', $zone_code);
+        $query = $this->db_checker->get();
         $result = $query->result();
         return $result;
     }
@@ -228,16 +234,16 @@ public function _get_origins()
         //
         $this->_getdatatables_customer();
         if (@$_POST['length'] != -1)
-            $this->db->limit(@$_POST['length'], @$_POST['start']);
-        $query = $this->db->get();
+            $this->db_checker->limit(@$_POST['length'], @$_POST['start']);
+        $query = $this->db_checker->get();
         return $query->result();
     }
 
 
     private function _getdatatables_user()
     {
-        $this->db->select('*');
-        $this->db->from('users');
+        $this->db_checker->select('*');
+        $this->db_checker->from('users');
 
 
         $i = 0;
@@ -245,13 +251,13 @@ public function _get_origins()
         if (@$_POST['search']['value']) {
             foreach ($this->customer_column_search as $item) {
                 if ($i === 0) {
-                    $this->db->group_start()
+                    $this->db_checker->group_start()
                         ->like($item, $_POST['search']['value']);
                 } else {
-                    $this->db->or_like($item, $_POST['search']['value']);
+                    $this->db_checker->or_like($item, $_POST['search']['value']);
                 }
                 if (count($this->customer_column_search) - 1 == $i) {
-                    $this->db->group_end();
+                    $this->db_checker->group_end();
                 }
                 $i++;
             }
@@ -260,11 +266,11 @@ public function _get_origins()
         if (isset($_POST['order'])) {
             $column_order_index = $_POST['order']['0']['column'];
             if ($this->customer_column_order[$column_order_index] != null) {
-                $this->db->order_by($this->customer_column_order[$column_order_index], $_POST['order']['0']['dir']);
+                $this->db_checker->order_by($this->customer_column_order[$column_order_index], $_POST['order']['0']['dir']);
             }
         } elseif (isset($this->order)) {
             $customer_order = $this->order;
-            $this->db->order_by(key($customer_order), $customer_order[key($customer_order)]);
+            $this->db_checker->order_by(key($customer_order), $customer_order[key($customer_order)]);
         }
 
     }
@@ -273,39 +279,39 @@ public function _get_origins()
     {
         $this->_getdatatables_user();
         if (@$_POST['length'] != -1)
-            $this->db->limit(@$_POST['length'], @$_POST['start']);
-        $query = $this->db->get();
+            $this->db_checker->limit(@$_POST['length'], @$_POST['start']);
+        $query = $this->db_checker->get();
         return $query->result();
     }
 
     function count_filtered_customer()
     {
         $this->_getdatatables_customer();
-        $query = $this->db->get();
+        $query = $this->db_checker->get();
         return $query->num_rows();
     }
 
     function count_all_customer()
     {
-        $this->db->select('*');
+        $this->db_checker->select('*');
 
-        $this->db->from('users');
-        return $this->db->count_all_results();
+        $this->db_checker->from('users');
+        return $this->db_checker->count_all_results();
     }
     function count_filtered_user()
     {
         //
         $this->_getdatatables_user();
-        $query = $this->db->get();
+        $query = $this->db_checker->get();
         return $query->num_rows();
     }
 
     function count_all_user()
     {
         //
-        $this->db->select('*');
-        $this->db->from('users');
-        return $this->db->count_all_results();
+        $this->db_checker->select('*');
+        $this->db_checker->from('users');
+        return $this->db_checker->count_all_results();
     }
 
 

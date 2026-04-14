@@ -1,31 +1,26 @@
 <?php
-use PHPStan\PhpDocParser\Ast\PhpDoc\TypeAliasImportTagValueNode;
 
 defined('BASEPATH') or exit('No direct script access allowed');
-// require APPPATH . 'third_party/PHPExcel/PHPExcel.php';
 
 class Users extends CI_Controller
 {
 
-
     public function __construct()
     {
-        parent::__construct();
-        $this->load->model('User_model');
-        $this->load->model('Admin_model');
-        $this->session->set_userdata('pages', 'user_page');
+        parent::__construct();                
+        $this->load->model('Users_model');        
         $this->load->library('session');
         $this->load->helper('url');
-        // $this->load->library('email');
         $this->load->library('encryption');
-
+        $this->session->set_userdata('pages', 'user_page');
+        $this->db_checker = $this->load->database('checker_pod', TRUE);
     }
 
     public function index()
     {
         $user_role = $this->session->userdata('role');
         $password = $this->session->userdata('password');
-        $get_origins = json_encode($this->User_model->_get_origins());
+        $get_origins = json_encode($this->Users_model->_get_origins());
         if ($password == "e10adc3949ba59abbe56e057f20f883e") {
             redirect('reset_password/input_password');
         } else if ($this->session->userdata('logged_in') && ($user_role == 'Super User')) {
@@ -38,16 +33,11 @@ class Users extends CI_Controller
             redirect('auth');
         }
         // var_dump($get_locations);
-        //
     }
-    public function testing()
-    {
-        $get_locations = json_encode($this->Admin_model->_get_origins());
-        var_dump($get_locations);
-    }
+
     public function view_users()
     {
-        $list = $this->User_model->getdatatables_users();
+        $list = $this->Users_model->getdatatables_users();
 
         $data = array();
         $no = $this->input->post('start', true);
@@ -93,8 +83,8 @@ class Users extends CI_Controller
         }
         $output = array(
             "draw" => @$_POST['draw'],
-            "recordsTotal" => $this->User_model->count_all_users(),
-            "recordsFiltered" => $this->User_model->count_filtered_users(),
+            "recordsTotal" => $this->Users_model->count_all_users(),
+            "recordsFiltered" => $this->Users_model->count_filtered_users(),
             "data" => $data,
         );
         echo json_encode($output);
@@ -117,7 +107,7 @@ class Users extends CI_Controller
             'no_hp' => $no_hp,
             'pass' => md5('123456'),
         );
-        if ($this->User_model->add_user_model($user_data)) {
+        if ($this->Users_model->add_Users_model($user_data)) {
             // Jika berhasil, set flashdata untuk notifikasi sukses
             $this->session->set_flashdata('notify', [
                 'message' => 'User berhasil ditambahkan!',
@@ -145,7 +135,7 @@ class Users extends CI_Controller
             'no_hp' => $this->input->post('noHpEdit'),
 
         );
-        if ($this->User_model->edit_users($user_data, $id_user)) {
+        if ($this->Users_model->edit_users($user_data, $id_user)) {
             // Jika berhasil, set flashdata untuk notifikasi sukses
             $this->session->set_flashdata('notify', [
                 'message' => 'User berhasil diedit!',
@@ -165,7 +155,7 @@ class Users extends CI_Controller
     public function delete_users()
     {
         $id_user = $this->input->post('idUserDelete');
-        if ($this->User_model->delete_users($id_user)) {
+        if ($this->Users_model->delete_users($id_user)) {
             // Jika berhasil, set flashdata untuk notifikasi sukses
             $this->session->set_flashdata('notify', [
                 'message' => 'User berhasil dihapus!',
@@ -190,7 +180,7 @@ class Users extends CI_Controller
 
         );
         
-        if ($this->User_model->locked_users($user_data,$id_user)) {
+        if ($this->Users_model->locked_users($user_data,$id_user)) {
             // Jika berhasil, set flashdata untuk notifikasi sukses
             $this->session->set_flashdata('notify', [
                 'message' => 'User berhasil di lock!',
@@ -210,7 +200,7 @@ class Users extends CI_Controller
     {
         $id_user = $this->input->post('idUserReset');
 
-        if ($this->User_model->default_password($id_user)) {
+        if ($this->Users_model->default_password($id_user)) {
             // Jika berhasil, set flashdata untuk notifikasi sukses
             $this->session->set_flashdata('notify', [
                 'message' => 'Password berhasil diubah ke default!',
@@ -226,20 +216,4 @@ class Users extends CI_Controller
         redirect('users');
     }
 
-    public function get_csrf()
-    {
-        echo $this->security->get_csrf_hash();
-    }
-
-    public function get_csrf_json()
-    {
-        $data['status'] = "Success";
-        $data['get_csrf_hash'] = $this->security->get_csrf_hash();
-        echo json_encode($data);
-    }
-
-
-
-
 }
-

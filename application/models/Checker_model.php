@@ -2,7 +2,13 @@
 
 class Checker_model extends CI_Model
 {
+    public function __construct()
+    {
+        parent::__construct();
 
+        // Load DB checker_pod tanpa mengganti $this->db
+        $this->db_checker = $this->load->database('checker_pod', TRUE);
+    }
     var $checker_column_order = array(null, "id_courier", "courier_name", "qty_awb", "qty_sesuai", "qty_tidak_sesuai", "qty_revisi", null, "runsheet_date", "upload_by", "zone", "zone_name", "status_pod"); //set column field database for datatable orderable
     var $checker_column_search = array("id_courier", "courier_name", "zone", "status_pod"); //set column field database for datatable orderable
 
@@ -171,19 +177,19 @@ class Checker_model extends CI_Model
 
         return $this->db->count_all_results('mv_checker_summary') + $this->db->count_all_results('summary_checker');
     }
-    function get_zone_name($zone_code)
-    {
-        $this->db->select('zone');
-        $this->db->from('zone');
-        $this->db->where('zone_code', $zone_code);
-        $query = $this->db->get();
+    // function get_zone_name($zone_code)
+    // {
+    //     $this->db->select('zone');
+    //     $this->db->from('zone');
+    //     $this->db->where('zone_code', $zone_code);
+    //     $query = $this->db->get();
 
-        if ($query->num_rows() > 0) {
-            return $query->row()->zone;  // Mengembalikan langsung string zone-nya
-        } else {
-            return null;  // Atau bisa juga return ''; tergantung kebutuhan
-        }
-    }
+    //     if ($query->num_rows() > 0) {
+    //         return $query->row()->zone;  // Mengembalikan langsung string zone-nya
+    //     } else {
+    //         return null;  // Atau bisa juga return ''; tergantung kebutuhan
+    //     }
+    // }
     function getdatatable_not_approve()
     {
         $dateFrom = $this->input->post('dateFrom', TRUE);
@@ -651,262 +657,15 @@ class Checker_model extends CI_Model
 
     public function _get_origin($zone)
     {
-        $this->db->select('origin_code');
-        $this->db->where('zone_code', $zone);
-        $this->db->from('zone');
-        $query = $this->db->get();
+        $this->db_checker->select('origin_code');
+        $this->db_checker->where('zone_code', $zone);
+        $this->db_checker->from('zone');
+        $query = $this->db_checker->get();
         $result = $query->row();
         return $result;
 
     }
-//     public function refresh_mv_checker_summary($id_checker)
-// {
-//     // FLEXIBLE: kalau array → pakai WHERE IN
-//     if (is_array($id_checker)) {
-//         $this->db->where_in('id_checker', $id_checker);
-//     } else {
-//         $this->db->where('id_checker', $id_checker);
-//     }
 
-//     // Ambil SATU row untuk dapetin id_courier & runsheet_date
-//     $old = $this->db->get('checker')->row();
-
-//     if (!$old) return; // tidak ada data? skip
-
-
-//     // --- hitung summary berdasarkan courier & tanggal ---
-//     $sql = "
-//         SELECT 
-//             ch.id_courier,
-//             DATE(ch.runsheet_date) AS runsheet_date,
-
-//             COUNT(ch.id_checker) AS qty_awb,
-//             SUM(CASE WHEN ch.status_checker = 'Sesuai' THEN 1 ELSE 0 END) AS qty_sesuai,
-//             SUM(CASE WHEN ch.status_checker = 'Revisi' THEN 1 ELSE 0 END) AS qty_revisi,
-//             SUM(CASE WHEN ch.status_checker = 'Tidak Sesuai' THEN 1 ELSE 0 END) AS qty_tidak_sesuai,
-
-//             MIN(c.courier_name) AS courier_name,
-//             MIN(z.zone) AS zone_name,
-//             MIN(z.origin_code) AS origin_code,
-//             MIN(u.role) AS role,
-//             MIN(u.name) AS name,
-//             MIN(u.username) AS username,
-
-//             MIN(ch.no_runsheet) AS no_runsheet,
-//             SUM(CASE WHEN ch.status_cod IS NOT NULL THEN 1 ELSE 0 END) AS success_pod,
-//             SUM(CASE WHEN ch.status_cod IS NULL THEN 1 ELSE 0 END) AS in_progress_pod,
-//             SUM(ch.amount) AS amount,
-//             SUM(CASE WHEN ch.status_cod LIKE 'u%' THEN ch.amount ELSE 0 END) AS cod_undelivered,
-
-//             MIN(ch.status_pod) AS status_pod,
-//             YEAR(MIN(ch.runsheet_date)) AS leaderboard_year,
-//             MONTH(MIN(ch.runsheet_date)) AS leaderboard_month
-
-//         FROM checker ch
-//         LEFT JOIN courier c ON c.id_courier = ch.id_courier
-//         LEFT JOIN zone z ON z.zone_code = ch.zone
-//         LEFT JOIN users u ON u.id_user = ch.upload_by
-//         WHERE ch.id_courier = ?
-//           AND DATE(ch.runsheet_date) = DATE(?)
-//         GROUP BY ch.id_courier, DATE(ch.runsheet_date)
-//     ";
-
-//     $summary = $this->db->query($sql, [
-//         $old->id_courier,
-//         $old->runsheet_date
-//     ])->row_array();
-
-//     // Upsert
-//     $this->db->replace('mv_checker_summary', $summary);
-// }
-
-
-    public function refresh_mv_checker_summary()
-    {
-        // 1. Kosongkan tabel summary
-        $this->db->query('TRUNCATE TABLE mv_checker_summary');
-
-        // 2. Isi ulang dari tabel checker dan relasi lainnya
-        $sql = "
-            INSERT INTO mv_checker_summary 
-            (
-                id_courier, 
-                id_checker, 
-                runsheet_date, 
-                create_date, 
-                upload_by, 
-                zone, 
-                status_checker, 
-                qty_awb, 
-                qty_sesuai, 
-                qty_revisi, 
-                qty_tidak_sesuai,
-                courier_name,
-                zone_name,
-                role,
-                name,
-                username,
-                no_runsheet,
-                success_pod,
-                in_progress_pod,
-                amount,
-                cod_undelivered,
-                status_pod,
-                leaderboard_year,
-                leaderboard_month
-            )
-            SELECT 
-                ch.id_courier,
-                MIN(ch.id_checker) AS id_checker,
-                MIN(ch.runsheet_date) AS runsheet_date,
-                MIN(ch.create_date) AS create_date,
-                MIN(ch.upload_by) AS upload_by,
-                MIN(ch.zone) AS zone,
-                MIN(ch.status_checker) AS status_checker,
-                COUNT(ch.id_courier) AS qty_awb,
-                SUM(CASE WHEN ch.status_checker = 'Sesuai' THEN 1 ELSE 0 END) AS qty_sesuai,
-                SUM(CASE WHEN ch.status_checker = 'Revisi' THEN 1 ELSE 0 END) AS qty_revisi,
-                SUM(CASE WHEN ch.status_checker = 'Tidak Sesuai' THEN 1 ELSE 0 END) AS qty_tidak_sesuai,
-                MIN(c.courier_name) AS courier_name,
-                MIN(z.zone) AS zone_name,
-                MIN(u.role) AS role,
-                MIN(u.name) AS name,
-                MIN(u.username) AS username,
-                MIN(ch.no_runsheet) AS no_runsheet,
-                SUM(CASE WHEN ch.status_cod IS NOT NULL THEN 1 ELSE 0 END) AS success_pod,
-                SUM(CASE WHEN ch.status_cod IS NULL THEN 1 ELSE 0 END) AS in_progress_pod,
-                SUM(ch.amount) AS amount,
-                SUM(CASE WHEN ch.status_cod LIKE 'u%' THEN ch.amount ELSE 0 END) AS cod_undelivered,
-                MIN(ch.status_pod) AS status_pod,
-                YEAR(MIN(ch.create_date)) AS leaderboard_year,
-                MONTH(MIN(ch.create_date)) AS leaderboard_month
-            FROM checker ch
-            LEFT JOIN courier c ON c.id_courier = ch.id_courier
-            LEFT JOIN zone z ON z.zone_code = ch.zone
-            LEFT JOIN users u ON u.id_user = ch.upload_by
-            GROUP BY ch.id_courier, DATE(ch.runsheet_date);
-
-
-        ";
-
-        $this->db->query($sql);
-    }
-
-    public function backup_and_cleanup_checker()
-    {
-        $sql = "
-        INSERT INTO summary_checker (
-            id_courier, id_checker, runsheet_date, create_date, upload_by, zone, status_checker, qty_awb, qty_sesuai, qty_revisi, qty_tidak_sesuai, courier_name, zone_name, origin_code, role, name, username, no_runsheet, success_pod, in_progress_pod, amount, cod_undelivered, status_pod,leaderboard_year,leaderboard_month
-        )
-        SELECT
-            ch.id_courier,
-    MIN(ch.id_checker) AS id_checker,
-    DATE(ch.runsheet_date) AS runsheet_date,
-    MIN(ch.create_date) AS create_date,
-    MIN(ch.upload_by) AS upload_by,
-    MIN(ch.zone) AS zone,
-    MIN(ch.status_checker) AS status_checker,
-    COUNT(ch.id_courier) AS qty_awb,
-    SUM(CASE WHEN ch.status_checker = 'Sesuai' THEN 1 ELSE 0 END) AS qty_sesuai,
-    SUM(CASE WHEN ch.status_checker = 'Revisi' THEN 1 ELSE 0 END) AS qty_revisi,
-    SUM(CASE WHEN ch.status_checker = 'Tidak Sesuai' THEN 1 ELSE 0 END) AS qty_tidak_sesuai,
-    MIN(c.courier_name) AS courier_name,
-    MIN(z.zone) AS zone_name,
-    MIN(z.origin_code) AS origin_code,
-    MIN(u.role) AS role,
-    MIN(u.name) AS name,
-    MIN(u.username) AS username,
-    MIN(ch.no_runsheet) AS no_runsheet,
-    SUM(CASE WHEN ch.status_cod IS NOT NULL THEN 1 ELSE 0 END) AS success_pod,
-    SUM(CASE WHEN ch.status_cod IS NULL THEN 1 ELSE 0 END) AS in_progress_pod,
-    SUM(ch.amount) AS amount,
-    SUM(CASE WHEN ch.status_cod LIKE 'u%' THEN ch.amount ELSE 0 END) AS cod_undelivered,
-    MIN(ch.status_pod) AS status_pod,
-    YEAR(MIN(ch.runsheet_date)) AS leaderboard_year,
-    MONTH(MIN(ch.runsheet_date)) AS leaderboard_month
-FROM checker ch
-LEFT JOIN courier c ON c.id_courier = ch.id_courier
-LEFT JOIN zone z ON z.zone_code = ch.zone
-LEFT JOIN users u ON u.id_user = ch.upload_by
-GROUP BY ch.id_courier, DATE(ch.runsheet_date);
-    ";
-        $this->db->query($sql);
-
-        // Ambil data gambar
-        $old_data = $this->db->where('runsheet_date <', date('Y-m-d', strtotime('-7 days')))
-            ->get('checker')->result();
-
-        foreach ($old_data as $row) {
-            foreach (['url_photo', 'url_pod', 'url_revision'] as $field) {
-                if (!empty($row->$field) && $row->$field !== 'public/img/Image-not-found.png') {
-                    $full_path = FCPATH . $row->$field;
-                    if (file_exists($full_path)) {
-                        @unlink($full_path);
-                    }
-                }
-            }
-        }
-
-        // Hapus data checker lebih dari 7 hari
-        $this->db->where('runsheet_date <', date('Y-m-d', strtotime('-7 days')))
-            ->delete('checker');
-    }
-
-    public function _select_runsheet($id_courier, $dateFrom, $dateThru)
-    {
-        $this->db->select('no_runsheet'); // Sesuaikan nama kolom
-        $this->db->from('checker');
-        $this->db->where('id_courier', $id_courier);
-        $this->db->where('runsheet_date >', $dateFrom);
-        $this->db->where('runsheet_date <', $dateThru);
-        $this->db->group_by('no_runsheet');
-        $query = $this->db->get();
-
-        return $query->result_array(); // Ambil hanya satu baris sebagai array
-    }
-
-    // public function _select_runsheet($id_courier, $dateFrom, $dateThru)
-    // {
-    //     $this->db->select("no_runsheet, 
-    //         CASE 
-    //             WHEN SUM(CASE WHEN status_pod IS NULL THEN 1 ELSE 0 END) > 0 THEN 'N'
-    //             ELSE 'Y'
-    //         END AS status_pod_flag", false);
-
-    //     $this->db->from('checker');
-
-    //     if ($id_courier != "ALL") {
-    //         $this->db->where('id_courier', $id_courier);
-    //     }
-
-    //     // Kalau mau filter tanggal, bisa aktifkan:
-    //     // $this->db->where('runsheet_date >=', $dateFrom);
-    //     // $this->db->where('runsheet_date <=', $dateThru);
-
-    //     $this->db->group_by('no_runsheet');
-
-    //     $query = $this->db->get();
-    //     return $query->result_array();
-    // }
-
-    public function get_sub_case_by_case($case_type)
-    {
-        $this->db->select('sub_tipe, id');
-        $this->db->from('sla');
-        $this->db->where('tipe_case', $case_type);
-        $query = $this->db->get();
-
-        return $query->result_array(); // Mengembalikan array, bukan satu objek
-    }
-
-    public function get_runsheet($id_courier, $runsheet_date){
-        $this->db->select('no_runsheet,id_courier,runsheet_date');
-        $this->db->from('mv_checker_summary');
-        $this->db->where('id_courier',$id_courier);
-        $this->db->where('date(runsheet_date)',$runsheet_date);
-        $query=$this->db->get();
-        return $query->row();
-    }
 
 
 }

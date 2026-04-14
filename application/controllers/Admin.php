@@ -10,61 +10,19 @@ class Admin extends CI_Controller
         parent::__construct();
         $this->load->model('Admin_model');
         $this->load->model('Upload_model');
-        // $this->load->model('User_model');        
+        $this->load->model('Users_model');
+        $this->load->model('Lm_model');
+
         $this->load->model('Checker_model');
-        $this->load->model('Leaderboard_model');
         $this->load->library('session');
         $this->load->helper('url');
-        $this->load->model('User_model');
         $this->load->library('encryption');
-        $this->session->set_userdata('pages', 'dashboard_page');
+        $this->session->set_userdata('pages', 'Last_mile_page');
+        $this->db_checker = $this->load->database('checker_pod', TRUE);
     }
 
-    public function index()
-    {
-        $user_role = $this->session->userdata('role');
-        $password = $this->session->userdata('password');
-        $zone = $this->session->userdata('location');
-        $origin = $this->Checker_model->_get_origin($zone);
-        $get_origins = json_encode($this->Admin_model->_get_origins());
-        $get_origins_array = json_decode($get_origins, true);
-
-
-        if ($password == "e10adc3949ba59abbe56e057f20f883e") {
-            redirect('reset_password/input_password');
-        } else if (
-            $this->session->userdata('logged_in') && (
-                $user_role == "Koordinator"
-                || $user_role == "Admin"
-                || $user_role == "Super User"
-                || $user_role == "CS"
-                || $user_role == "CCC"
-                || $user_role == "BPS"
-                || $user_role == "HC"
-                || $user_role == "Kepala Cabang BDO2"
-                || $user_role == "Kepala Cabang"
-                || $user_role == "BBP"
-                || $user_role == "PAO"
-                || $user_role == "POD"
-                || $user_role == "Admin BDO2"
-                || $user_role == "Koordinator BDO2"
-                
-            )
-        ) {
-            $data['title'] = 'Dashboard Admin';
-            $data['page_name'] = 'upload';
-            $data['get_origins'] = $get_origins;
-            $data['role'] = $user_role;
-            $data['zone'] = $zone;
-            $data['origin'] = $origin->origin_code;
-            // var_dump($origin);
-
-            $this->load->view('dashboard', $data);
-        } else {
-            redirect('auth');
-        }
-    }
-
+   
+    
 
 
     public function get_zone()
@@ -91,7 +49,7 @@ class Admin extends CI_Controller
         // }
 
     }
-    public function detail($encrypted_id, $runsheet_date, $status_pod,$no_runsheet)
+    public function detail($encrypted_id, $runsheet_date, $status_pod, $no_runsheet)
     {
 
         $user_role = $this->session->userdata('role');
@@ -99,10 +57,10 @@ class Admin extends CI_Controller
         $status_pod = base64_decode(urldecode($status_pod));
         $runsheet_date = base64_decode(urldecode($runsheet_date));
         $no_runsheet = base64_decode(urldecode($no_runsheet));
-        
+
         $checker_approve = $this->Checker_model->_get_data_approve($id_courier, $runsheet_date);
         $checker_not_approve = $this->Checker_model->_get_data_not_approve($id_courier, $runsheet_date);
-        $checker_revision = $this->Checker_model->_get_data_revision($id_courier, $runsheet_date);        
+        $checker_revision = $this->Checker_model->_get_data_revision($id_courier, $runsheet_date);
 
         $data['courier'] = $this->Checker_model->_get_data_courier($id_courier);
         $data['progress'] = $this->Checker_model->_get_progress($id_courier, $runsheet_date);
@@ -126,123 +84,11 @@ class Admin extends CI_Controller
         // var_dump($id_courier);
         // var_dump($encrypted_id);
     }
-    
-   
+
+
     //sampe sini
 
-    public function change_status_awb(){
-        $runsheet_date=date("Y-m-d",strtotime($this->input->post("runsheet_date_status_pod")));             
-        $id_courier=$this->input->post("id_courier_status_pod");        
-        if ($this->Checker_model->change_status_awb($runsheet_date, $id_courier)) {
-            $response = [
-                'status' => 'success',
-                'message' => 'Status AWB berhasil diubah!',
-                'redirect' => base_url('admin')
-            ];
-        } else {
-            $response = [
-                'status' => 'danger',
-                'message' => 'Status AWB gagal diubah',
-                'redirect' => base_url('admin')
-            ];
-        }        
-        echo json_encode($response);
-                
-    }
-
-
-    public function select_runsheet(){
-        $id_courier=$this->input->post("select_courier");
-        $dateFrom=$this->input->post("dateFrom");
-        $dateThru=$this->input->post("dateThru");
-        $no_runsheet=$this->Checker_model->_select_runsheet($id_courier,$dateFrom,$dateThru);        
-
-        // var_dump($id_courier,$dateFrom,$dateThru);
-        echo json_encode($no_runsheet);
-    }
-    
-    public function change_status()
-    {
-        $id_checker = $this->input->post("ids");
-        $id_courier = $this->input->post("id_courier");
-        $runsheet_date = $this->input->post("runsheet_date");
-        $no_runsheet = $this->input->post("no_runsheet");
-
-        // var_dump($id_checker);
-
-        if ($this->Checker_model->_change_status($id_courier, $id_checker)) {
-            // Refresh materialize
-            $this->Checker_model->refresh_mv_checker_summary($id_checker);
-            $point_photo_pod = $this->Leaderboard_model->get_status_photo_pod($id_courier, $runsheet_date);
-    
-                
-            if ($this->Leaderboard_model->update_poin_photo_pod($no_runsheet, $point_photo_pod)) {
-                $response = [
-                    'status' => 'success',
-                    'message' => 'Status POD berhasil diperbarui!'
-                ];
-            } else {
-                $response = [
-                    'status' => 'danger',
-                    'message' => 'Gagal mengubah poin POD'
-                ];
-            }
-                    
-            $this->Leaderboard_model->refresh_total_poin($no_runsheet);
-            $this->Leaderboard_model->refresh_mv_leaderboard_summary();
-        } else {
-
-            $response = [
-                'status' => 'danger',
-                'message' => 'Status POD gagal diperbarui!'
-            ];
-        }
-
-        echo json_encode($response);
-    }
-    public function change_status_approve()
-    {
-        $id_checker = $this->input->post("ids_tidak_sesuai");
-        $id_courier = $this->input->post("id_courier_approve");        
-        $runsheet_date = $this->input->post("runsheet_date_approve");
-        $no_runsheet = $this->input->post("no_runsheet_approve");
-
-        // var_dump($id_checker,$runsheet_date,$no_runsheet);
-
-        if ($this->Checker_model->_change_status_approve($id_courier, $id_checker)) {
-            // Refresh materialize
-            $this->Checker_model->refresh_mv_checker_summary();
-            $point_photo_pod = $this->Leaderboard_model->get_status_photo_pod($id_courier, $runsheet_date);
-    
-                
-            if ($this->Leaderboard_model->update_poin_photo_pod($no_runsheet, $point_photo_pod)) {
-                $response = [
-                    'status' => 'success',
-                    'message' => 'Status POD berhasil diperbarui!'
-                ];
-            } else {
-                $response = [
-                    'status' => 'danger',
-                    'message' => 'Gagal mengubah poin POD'
-                ];
-            }
-                    
-            $this->Leaderboard_model->refresh_total_poin($no_runsheet);
-        } else {
-
-            $response = [
-                'status' => 'danger',
-                'message' => 'Status POD gagal diperbarui!'
-            ];
-        }
-
-        // var_dump($id_checker);
-
-        echo json_encode($response);
-    }
-
-
-
+    // dipake
     public function getdatatables_checker()
     {
         $user_role = $this->session->userdata('role');
@@ -252,8 +98,8 @@ class Admin extends CI_Controller
         foreach ($list as $item) {
             $zone = $item->zone;
             $persentase_progres = ($item->success_pod / ($item->success_pod + $item->in_progress_pod)) * 100;
-            $status_pod=$item->status_pod;
-         
+            $status_pod = $item->status_pod;
+
 
             $no++;
             $row = array();
@@ -285,7 +131,7 @@ class Admin extends CI_Controller
 
             if ($item->source_table === 'mv') {
                 $button .= '
-        <a href="' . base_url('admin/detail/' . urlencode(base64_encode($item->id_courier)) . '/' . urlencode(base64_encode($item->runsheet_date)) . '/' . urlencode(base64_encode(isset($item->status_pod) ? $item->status_pod : "T")). '/' . urlencode(base64_encode(isset($item->no_runsheet) ? $item->no_runsheet : "N"))) . '" 
+        <a href="' . base_url('admin/detail/' . urlencode(base64_encode($item->id_courier)) . '/' . urlencode(base64_encode($item->runsheet_date)) . '/' . urlencode(base64_encode(isset($item->status_pod) ? $item->status_pod : "T")) . '/' . urlencode(base64_encode(isset($item->no_runsheet) ? $item->no_runsheet : "N"))) . '" 
             class="btn btn-dark waves-effect waves-light btn-sm me-1" 
             title="Detail" data-plugin="tippy" data-tippy-placement="top">
             <i class="fa fa-info-circle"> Detail</i>
@@ -334,143 +180,9 @@ class Admin extends CI_Controller
         );
         echo json_encode($output);
     }
-    public function getdatatable_not_approve()
-    {
-        $user_role = $this->session->userdata('role');
-        $list = $this->Checker_model->getdatatable_not_approve();
-        $data = array();
-        $no = $this->input->post('start', true);
-        foreach ($list as $item) {
-            $zone = $item->zone;
-            $persentase_progres = ($item->success_pod / ($item->success_pod + $item->in_progress_pod)) * 100;
-
-            $no++;
-            $row = array();
-            $row[] = '<small style="font-size:12px">' . $no . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->id_courier) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->courier_name) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->qty_awb) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->qty_sesuai) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->qty_tidak_sesuai) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->qty_revisi) . '</small>';
-            $row[] = '<b style="font-size:12px">' . htmlspecialchars($item->success_pod) . ' / ' . htmlspecialchars($item->in_progress_pod) . '</b>
-            <br>
-            <div class="progress">
-                <div class="progress-bar progress-bar-striped" style="width:' . $persentase_progres . '%">' . number_format($persentase_progres, 1) . '%</div>
-            </div>
-            ';
-            // $date_only = date('Y-m-d', strtotime($runsheet_date));
-            $row[] = '<small style="font-size:12px">' . date('Y-m-d', strtotime($item->runsheet_date)) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->name) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($zone) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($this->Checker_model->get_zone_name($item->zone)) . '</small>';
-
-            $button = ' <div class="form-button-action"> ';
-
-            
-            if ($item->source_table === 'mv') {
-                $button .= '
-        <a href="' . base_url('admin/detail/' . urlencode(base64_encode($item->id_courier)) . '/' . urlencode(base64_encode($item->runsheet_date)) . '/' . urlencode(base64_encode(isset($item->status_pod) ? $item->status_pod : "T")). '/' . urlencode(base64_encode(isset($item->no_runsheet) ? $item->no_runsheet : "N"))) . '" 
-            class="btn btn-dark waves-effect waves-light btn-sm me-1" 
-            title="Detail" data-plugin="tippy" data-tippy-placement="top">
-            <i class="fa fa-info-circle"> Detail</i>
-        </a>';
-
-            }
 
 
-            if ($user_role === "Super User" && $item->source_table === 'mv') {
-
-                $button .= '
-        <button class="btn btn-link btn-danger btn-lg" onclick="deleteValidasi(
-            \'' . addslashes(trim($item->id_courier)) . '\',
-            \'' . addslashes(trim($item->id_checker)) . '\',
-            \'' . addslashes(trim($item->create_date)) . '\',
-            \'' . addslashes(trim($item->runsheet_date)) . '\',
-            \'' . addslashes(trim($item->courier_name)) . '\')"
-            data-bs-toggle="modal" data-bs-target="#deleteValidasi">
-            <i class="fa fa-times"></i>
-        </button>';
-            } else if ($user_role === "Super User" && $item->source_table != 'mv') {
-                $button .= '
-                <button class="btn btn-link btn-danger btn-lg" onclick="deleteValidasiBackup(
-                    \'' . addslashes(trim($item->id_courier)) . '\',
-                    \'' . addslashes(trim($item->id_checker)) . '\',
-                    \'' . addslashes(trim($item->create_date)) . '\',
-                    \'' . addslashes(trim($item->runsheet_date)) . '\',
-                    \'' . addslashes(trim($item->courier_name)) . '\')"
-                    data-bs-toggle="modal" data-bs-target="#deleteValidasiBackup">
-                    <i class="fa fa-times"></i>
-                </button>';
-            }
-
-            $button .= '</div>';
-
-            $row[] = $button;
-
-
-            $data[] = $row;
-        }
-        $output = array(
-            "draw" => @$_POST['draw'],
-            "recordsTotal" => $this->Checker_model->count_all_not_approve(),
-            "recordsFiltered" => $this->Checker_model->count_filtered_not_approve(),
-            "data" => $data,
-        );
-        echo json_encode($output);
-    }
-
-    public function summary_dashboard()
-    {
-        $dateFrom = $this->input->post('dateFrom');
-        $dateThru = $this->input->post('dateThru');
-        $origin = $this->input->post('origin', TRUE);
-        $zone = $this->input->post('zone', TRUE);
-
-        $where = "WHERE create_date BETWEEN ? AND ?";
-        $params = [$dateFrom . ' 00:00:00', $dateThru . ' 23:59:59'];
-
-        if (!empty($origin)) {
-            $where .= " AND origin_code = ?";
-            $params[] = $origin;
-        }
-
-        if (!empty($zone)) {
-            $where .= " AND zone = ?";
-            $params[] = $zone;
-        }
-        $select_columns = "
-            id_courier, id_checker, runsheet_date, create_date, upload_by,
-            zone, status_checker, qty_awb, qty_sesuai, qty_revisi, qty_tidak_sesuai,
-            courier_name, zone_name, origin_code, role, name, username,
-            'mv' AS source_table
-        ";
-
-        $sql = "
-            SELECT 
-                SUM(qty_awb) AS totalAwb,
-                SUM(qty_sesuai) AS approve,
-                SUM(qty_tidak_sesuai) AS notApprove,
-                SUM(qty_revisi) AS revision
-            FROM (
-                SELECT $select_columns FROM mv_checker_summary $where
-                UNION ALL
-                SELECT $select_columns FROM summary_checker $where
-            ) AS combined
-        ";
-
-        // Gabung parameter dua kali karena dipakai di dua bagian UNION
-        $finalParams = array_merge($params, $params);
-        $query = $this->db->query($sql, $finalParams);
-        $result = $query->row();
-
-        echo json_encode([
-            'totalAwb' => (int) $result->totalAwb,
-            'approve' => (int) $result->approve,
-            'notApprove' => (int) $result->notApprove,
-            'revision' => (int) $result->revision
-        ]);
-    }
+    
 
 
     public function getSourceData()
@@ -537,6 +249,7 @@ class Admin extends CI_Controller
     }
 
     // cbug di hapus url revision
+    //dipake
     public function delete_validasi_backup()
     {
         $id_courier = $this->input->post('id_courrier_delete_backup');
@@ -562,16 +275,15 @@ class Admin extends CI_Controller
         redirect('admin');
     }
 
-    public function refresh_leaderboard(){
-        $this->Leaderboard_model->refresh_mv_leaderboard_summary();
-        redirect('admin');
-    }
+
+
+    //dipake
     public function delete_validasi()
     {
         $id_courier = $this->input->post('id_courrier_delete');
         $runsheet_date = $this->input->post('runsheet_date_delete');
-        $no_runsheet = $this->input->post('no_runsheet_delete');        
-        
+        $no_runsheet = $this->input->post('no_runsheet_delete');
+
 
         if ($this->Upload_model->delete_validasi($id_courier, $runsheet_date)) {
 
@@ -611,32 +323,8 @@ class Admin extends CI_Controller
             }
 
             $this->Checker_model->refresh_mv_checker_summary();
-            
-            if($this->Leaderboard_model->delete_leaderboard($no_runsheet)){
-                
-                $this->session->set_flashdata('notify', [
-                    'message' => 'Data Validasi berhasil dihapus!',
-                    'type' => 'success'
-                ]);
-            }else{
-                $this->session->set_flashdata('notify', [
-                    'message' => 'Gagal hapus poin Leaderboard!',
-                    'type' => 'warning'
-                ]);
-            }
-            if($this->Leaderboard_model->delete_checker_notes($no_runsheet)){
-                
-                $this->session->set_flashdata('notify', [
-                    'message' => 'Data Validasi berhasil dihapus!',
-                    'type' => 'success'
-                ]);
-            }else{
-                $this->session->set_flashdata('notify', [
-                    'message' => 'Gagal hapus Cod Paid!',
-                    'type' => 'warning'
-                ]);
-            }
-            $this->Leaderboard_model->refresh_mv_leaderboard_summary();
+
+
 
         } else {
             $this->session->set_flashdata('notify', [
@@ -645,44 +333,11 @@ class Admin extends CI_Controller
             ]);
         }
 
-      
+
         redirect('admin');
     }
 
-    public function testing_delete()
-    {
-        $path = "uploads/images_revision/revision_1749629088.jpg";
-        if (file_exists($path)) {
-            echo "Ada file. ";
-            if (unlink($path)) {
-                echo "Berhasil dihapus.";
-            } else {
-                echo "Gagal hapus.";
-            }
-        } else {
-            echo "File tidak ditemukan.";
-        }
-    }
 
-
-    public function get_path()
-    {
-        $id_courier = "BDO026";
-        $create_date = "2025-06-12 11:44:52";
-
-        $results = $this->Upload_model->get_image_paths($id_courier, $create_date);
-
-        // Format response lebih baik
-        $response = [
-            'status' => 'success',
-            'count' => count($results),
-            'data' => $results
-        ];
-
-        // Tampilkan response JSON dengan format rapi
-        header('Content-Type: application/json');
-        echo json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-    }
     public function get_csrf()
     {
         echo $this->security->get_csrf_hash();
