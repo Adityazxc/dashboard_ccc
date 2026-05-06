@@ -5,29 +5,25 @@ class Customers_fm_model extends CI_Model
 
     var $fm_column_order = array(
         null,
-        'account_number',
-        'cust_branch',
+        'cust_id',        
         'cust_name',
-        'cust_name2',
-        'payment_metode',
-        'big_grouping_cust',
-        'cust_industry',
-        'status_customer',
-        'cek',
-        'pic_bdo'
+        'grouping_cust',
+        'segmentasi',
+        'name',
+        'status',
+        'address',
+        'source'
     );
     
     var $fm_column_search = array(
-        'account_number',
-        'cust_branch',
+        'cust_id',        
         'cust_name',
-        'cust_name2',
-        'payment_metode',
-        'big_grouping_cust',
-        'cust_industry',
-        'status_customer',
-        'cek',
-        'pic_bdo'
+        'grouping_cust',
+        'segmentasi',
+        'name',
+        'status',
+        'address',
+        'source'
     );
     
     var $lm_order = array('id_cus_fm' => 'DESC');
@@ -47,12 +43,33 @@ class Customers_fm_model extends CI_Model
         return $query->result_array();
 
     }
+    public function add_customers($data)
+    {
+        $this->db->insert('cus_fm', $data);
+        return $this->db->affected_rows() > 0;
+    }
+    public function active_customers_lm($id_user,$status_customer)
+    {
+        $data = array('status' => $status_customer);
+        $this->db->where('id', $id_user);
+        $this->db->update('cus_fm',$data);        
+        return $this->db->affected_rows() > 0;
 
+    }
+
+    public function edit_customers_fm($data, $id_user)
+    {
+        $this->db->where('id', $id_user);
+        $this->db->update('cus_fm', $data);
+        return $this->db->affected_rows() > 0;
+    }
     private function _getdatatables_customers_fm()
     {
-        $this->db->select('*');
+        $this->db->select('cus_fm.*,
+        u.name');
         
         $this->db->from('cus_fm');
+        $this->db->join('checker_pod.users u', 'u.username = cus_fm.pic', 'left');
         
         
 

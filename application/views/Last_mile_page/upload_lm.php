@@ -18,7 +18,7 @@
     </div>
     <div id="upload-status"></div> -->
         <div class="card-body p-4">
-            <?php $access_upload = in_array($role, ['Super User', 'PAO']); ?>
+        <?php $access_upload = in_array($role, ['Super User', 'PAO','CCC']); ?>
             <?php if ($access_upload): ?>
                 <form action="<?= base_url('upload/import_data') ?>" method="POST" enctype="multipart/form-data">
                     <!-- Tambahkan ini di atas tabel -->
@@ -48,7 +48,7 @@
                             <th>Customer Name</th>
                             <th>PIC</th>
                             <th>Tgl</th>
-                            <th>Origin</th>
+                            <th>Destination</th>
                             <th>Zone Code</th>
                             <th>Service</th>
                             <th>Shipment</th>

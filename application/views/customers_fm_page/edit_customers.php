@@ -14,6 +14,7 @@
 
                         <input id="id_cus_fm_edit" name="id_cus_fm_edit" type="hidden" class="form-control">
                         <?php $users_ccc = json_decode($get_users_ccc, true); ?>
+                        <?php $type_cust = json_decode($get_type_cust, true); ?>
                         <div class="col-sm-12">
                             <div class="form-group form-group-default">
                                 <label>PIC</label>
@@ -36,10 +37,23 @@
                                     width: '100%',
                                     dropdownParent: $('#ModalEditCustomer')
                                 });
+                                $('#segmentasi_edit').select2({
+                                    placeholder: "-- Pilih Origin --",
+                                    allowClear: true,
+                                    width: '100%',
+                                    dropdownParent: $('#ModalEditCustomer')
+                                });
                             });
 
 
                         </script>
+                        <div class="col-sm-12">
+                            <div class="form-group form-group-default">
+                                <label>Customer ID</label>
+                                <input id="cust_id_edit" name="cust_id_edit" type="text" class="form-control"
+                                    autocomplete="off">
+                            </div>
+                        </div>
                         <div class="col-sm-12">
                             <div class="form-group form-group-default">
                                 <label>Customer Name</label>
@@ -56,14 +70,22 @@
                             </div>
                         </div>
 
+                      
                         <div class="col-sm-12">
                             <div class="form-group form-group-default">
-                                <label>Segmentasi</label>
-                                <input id="segmentasi_edit" name="segmentasi_edit" type="text" class="form-control"
-                                    autocomplete="off">
+                                <label>segmentasi</label>
+                                <select class="form-select" id="segmentasi_edit" name="segmentasi_edit" required>
+
+
+                                    <?php foreach ($type_cust as $cust): ?>
+                                        <option value="<?= $cust['segmentasi'] ?>">
+                                            <?= $cust['segmentasi'] ?>
+                                        </option>
+                                    <?php endforeach; ?>
+
+                                </select>
                             </div>
                         </div>
-                      
 
 
                         <div class="col-sm-12">
@@ -71,11 +93,27 @@
                                 <label>Status</label>
                                 <select class="form-select" id="status_edit" name="status_edit" required>
                                     <option value="Active">Active</option>
-                                    <option value="Non Active">Non Active</option>
+                                    <option value="Deactive">Deactive</option>
                                 </select>
                             </div>
                         </div>
 
+                        <div class="col-sm-12">
+                            <div class="form-group form-group-default">
+                                <label>Address</label>
+                                <input id="address_edit" name="address_edit" type="text" class="form-control"
+                                    autocomplete="off">
+                            </div>
+                        </div>
+                      
+                        <div class="col-sm-12">
+                            <div class="form-group form-group-default">
+                                <label>Source</label>
+                                <input id="source_edit" name="source_edit" type="text" class="form-control"
+                                    autocomplete="off">
+                            </div>
+                        </div>
+                      
                     </div>
 
                     <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>"

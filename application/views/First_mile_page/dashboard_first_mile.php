@@ -103,7 +103,7 @@
                     <div class="col-9 col-stats ms-0 ps-0">
                         <div class="numbers">
                             <p class="card-category">Return</p>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800 delivered_count"></div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800 return_count"></div>
                         </div>
                     </div>
                 </div>
@@ -233,8 +233,7 @@
                 data: formData,
                 success: (r) => {
 
-                    console.log("hehe");
-                    console.log(r.post);
+                    
 
 
 
@@ -242,6 +241,7 @@
                     $('.delivered_count').text(formatNum(r.delivered_count || 0));
                     $('.on_proses_count').text(formatNum(r.on_proses_count || 0));
                     $('.total_amount').text(formatNum(r.total_amount || 0));
+                    $('.return_count').text(formatNum(r.return_count || 0));
 
 
                 },

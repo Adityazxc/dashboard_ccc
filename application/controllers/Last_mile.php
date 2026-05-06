@@ -234,11 +234,11 @@ class Last_mile extends CI_Controller
             $no++;
             $row = array();
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($no) . '</small>';
-            if ($item->cust_name == null || $item->cust_name == '') {
+            if ($item->customer_name == null || $item->customer_name == '-') {
 
                 $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->cnote_cust_no) . '</small>';
             } else {
-                $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->cust_name) . '</small>';
+                $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->customer_name) . '</small>';
 
             }
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->pic_bdo) . '</small>';
@@ -294,8 +294,8 @@ class Last_mile extends CI_Controller
             $no++;
             $row = array();
             $row[] = '<small style="font-size:12px">' . $no . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->cnote_cust_no) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->cust_name) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->customer_name) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->cust_type) . '</small>';
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->delivered_count) . '</small>';
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->un_inbound) . '</small>';
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->un_runsheet) . '</small>';
@@ -338,11 +338,11 @@ class Last_mile extends CI_Controller
             $no++;
             $row = array();
             $row[] = '<small style="font-size:12px">' . $no . '</small>';
-            if ($item->cust_name == null || $item->cust_name == '') {
+            if ($item->customer_name == null || $item->customer_name == '') {
 
                 $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->cnote_cust_no) . '</small>';
             } else {
-                $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->cust_name) . '</small>';
+                $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->customer_name) . '</small>';
 
             }
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->pic_bdo) . '</small>';
@@ -470,7 +470,10 @@ class Last_mile extends CI_Controller
     }
    
     public function export_data_last_mile()
+    
 {
+    ini_set('memory_limit', '-1');
+    set_time_limit(0);
     $post = $this->input->post();
     $data = $this->Lm_model->getDataNotApprove($post);
 
@@ -483,7 +486,7 @@ class Last_mile extends CI_Controller
         'Cnote Pay Type','Shipment','Cnote Date','Cnote Origin','Cnote Destination',
         'Cnote No','Cnote Branch Id','Cnote Services Code','Cnote Qty','Cnote Weight',
         'Cnote Goods Descr','Cnote Goods Value','Cnote Amount','Cnote Refno','Cod Amount',
-        'Cnote Crdate','Cnote Cancel','Status','Reason Code','Pod Code','Irreg Code',
+        'Cnote Crdate','Cnote Cancel','Status','Reason Code','Pod Code','Pod Receiver Reason','Irreg Code',
         'Im Date','Runsheet Date','Pod Date','Status Shipment','Pod Doc No','Pod Attempt',
         'Sm Date','Sm Origin','Sla Due Date','Manifest Date','Receiving Date','Hvo Date',
         'Hvo Branch','Irreg Date','Irreg Status','Irreg Status Date',
@@ -523,12 +526,13 @@ class Last_mile extends CI_Controller
             $d['cnote_crdate'] ?? '',
             $d['cnote_cancel'] ?? '',
             $d['filter'] ?? '',
-            $d['reason_code'] ?? '',
+            $d['pod_status'] ?? '',
             $d['pod_code'] ?? '',
+            $d['Pod_receiver_reason'] ?? '',
             $d['irreg_code'] ?? '',
             $d['lm_date'] ?? '',
             $d['runsheet_date'] ?? '',
-            $d['pod_date'] ?? '',
+            $d['pod_date'] ?? '',            
             $d['status_shipment'] ?? '',
             $d['pod_doc_no'] ?? '',
             $d['pod_attempt'] ?? '',
@@ -543,10 +547,10 @@ class Last_mile extends CI_Controller
             $d['irreg_status'] ?? '',
             $d['irreg_status_date'] ?? '',
             $d['cnote_branch_dest_id'] ?? '',
-            $d['pic_bdo'] ?? '',
+            $d['pic'] ?? '',
             $d['big_grouping_cust'] ?? '',
             $d['cnote_cust_no'] ?? '',
-            $d['cust_name'] ?? '',
+            $d['customer_name'] ?? '',
             $d['sm_date'] ?? '',
             (isset($d['carrier']) && $d['carrier'] < 0) 
         ? 'Over Time SLA' 

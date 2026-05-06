@@ -1,3 +1,8 @@
+
+
+
+
+
 <div class="card card-raised">
     <div class="card-header  text-white px-4">
         <div class="d-flex justify-content-between align-item-center">
@@ -28,6 +33,8 @@
                         <th>SEGMENTASI</th>
                         <th>PIC</th>
                         <th>Status</th>
+                        <th>Address</th>
+                        <th>Source</th>
                         <th>Action</th>
 
                     </tr>
@@ -92,15 +99,19 @@
        grouping_cust,
        segmentasi,
        pic,
-       status
+       status,
+       address,
+         source
 
     ) {
         $('#id_cus_fm_edit').val(id);
-        $('#cust_name_edit').val(cust_id);
-        $('#cust_branch_edit').val(cust_name);
+        $('#cust_id_edit').val(cust_id);        
         $('#cust_name_edit').val(cust_name);
         $('#grouping_cust_edit').val(grouping_cust);
         $('#segmentasi_edit').val(segmentasi);
+        $('#address_edit').val(address);
+        $('#source_edit').val(source);
+        $('#segmentasi_edit').val(segmentasi).trigger('change');
         $('#pic_bdo_edit').val(pic).trigger('change');
         $('#status_edit').val(status).trigger('change');        
       
@@ -108,7 +119,7 @@
 
     function deactiveCustomer(id, username) {
         $('#message-locked-warning').text('Apakah anda yakin akan Deactive Customer ' + username + '?');
-        $('#idUserlocked').val(id);
+        $('#id_customer_deactive').val(id);
     }
 </script>
 
@@ -122,13 +133,13 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
                 </button>
             </div>
-            <form action="<?= base_url('customers_lm/deactive') ?>" method="POST" enctype="multipart/form-data">
+            <form action="<?= base_url('customers_fm/deactive') ?>" method="POST" enctype="multipart/form-data">
                 <div class="modal-body">
                     <p id="message-locked-warning"></p>
                     <div class="row">
 
-                        <input id="id_customer_deative" name="idUserlocked" type="text" class="form-control"
-                            autocomplete="off" required>
+                        <input id="id_customer_deactive" name="id_customer_deactive" type="hidden" class="form-control"
+                            autocomplete="off" >
 
                     </div>
 

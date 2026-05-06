@@ -16,7 +16,7 @@
     </div>
     <div id="upload-status"></div> -->
     <div class="card-body p-4">
-        <?php $access_upload = in_array($role, ['Super User', 'PAO']); ?>
+        <?php $access_upload = in_array($role, ['Super User', 'PAO', 'CCC']); ?>
         <?php if ($access_upload): ?>
             <form action="<?= base_url('first_mile/import_data') ?>" method="POST" enctype="multipart/form-data">
                 <!-- Tambahkan ini di atas tabel -->
@@ -45,10 +45,11 @@
                         <th>Customer Name</th>
                         <th>PIC</th>
                         <th>Tgl</th>
-                        <th>Origin</th>
-                        <th>Zone Code</th>
+                        <th>Region Destination</th>
+                        <th>Branch Destination</th>
                         <th>Service</th>
                         <th>Shipment</th>
+                        <th>Customer Industry</th>
                         <th>Pay Type</th>
                         <th>Zone Delivery</th>
                         <th>POD Code</th>
@@ -147,20 +148,20 @@
         const form = $('<form>', {
             method: 'POST',
             action: '<?= base_url('First_mile/export_data_first_mile') ?>'
-    });
+        });
 
-    // loop semua filter
-    formData.forEach(function (item) {
-        form.append($('<input>', {
-            type: 'hidden',
-            name: item.name,
-            value: item.value
-        }));
-    });
+        // loop semua filter
+        formData.forEach(function (item) {
+            form.append($('<input>', {
+                type: 'hidden',
+                name: item.name,
+                value: item.value
+            }));
+        });
 
-    $('body').append(form);
-    form.submit();
-});
+        $('body').append(form);
+        form.submit();
+    });
 
 
 

@@ -6,7 +6,7 @@
     <div class="card-header text-white px-4">
         <div class="d-flex justify-content-between align-item-center">
             <div class="me-4">
-                <h2 class="card-title text-primary mb-0 ">Performance Shipment LM</h2>
+                <h2 class="card-title text-primary mb-0 ">Performance Shipment First Mile</h2>
             </div>
 
         </div>
@@ -21,15 +21,9 @@
                         <th>Customer</th>
                         <th>PIC</th>
                         <th>Delivered</th>
-                        <th>UN Inbound</th>
-                        <th>UN Runsheet</th>
+                        <th>Open Pod</th>                        
                         <th>Return</th>
-                        <th>Grand Total</th>
-                        <!-- <th>First Attemp</th>
-                        <th>On Time SLA</th>                                                
-                        <th>Over SLA</th>
-                        <th>Return</th>
-                        <th>Grand Total</th>                         -->
+                        <th>Grand Total</th>                    
 
                     </tr>
                 </thead>

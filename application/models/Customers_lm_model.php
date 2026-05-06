@@ -112,15 +112,16 @@ class Customers_lm_model extends CI_Model
     {
         $this->db->select('account_number,cust_name');
         $this->db->from('cus_lm');
+        $this->db->group_by('cust_name');
         $query = $this->db->get();
         return $query->result_array();
 
     }
     public function _get_grouping_customer()
     {
-        $this->db->select('big_grouping_cust,account_number');
-        $this->db->group_by('big_grouping_cust');        
+        $this->db->select('big_grouping_cust, account_number');
         $this->db->from('cus_lm');
+        $this->db->group_by(['big_grouping_cust']);
         $query = $this->db->get();
         return $query->result_array();
 

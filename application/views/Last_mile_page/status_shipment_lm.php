@@ -18,8 +18,8 @@
                 <thead>
                     <tr>
                         <th>No</th>
-                        <th>Account_number </th>
-                        <th>Customer Name</th>                                                
+                        <th>Big Customer </th>
+                        <th>Customer Industry</th>                                                
                         <th>Delivered</th>
                         <th>Un Inbound</th>
                         <th>Un Runsheet</th>

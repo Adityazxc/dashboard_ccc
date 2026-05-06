@@ -112,3 +112,14 @@ $db['checker_pod'] = array(
     'db_debug' => TRUE,
 );
 
+// $db['checker_pod'] = array(
+//     'dsn'      => '',
+//     'hostname' => '192.168.154.18',
+//     'username' => 'dev',
+//     'password' => 'K@camata829#',
+//     'database' => 'checker_pod',
+//     'dbdriver' => 'mysqli',
+//     'dbprefix' => '',
+//     'pconnect' => FALSE,
+//     'db_debug' => TRUE,
+// );

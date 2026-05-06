@@ -1,4 +1,4 @@
-<?php $this->load->view('form_page/filter_form_fm')?>
+<?php $this->load->view('form_page/filter_form_fm') ?>
 
 
 
@@ -6,20 +6,20 @@
     <div class="card-header text-white px-4">
         <div class="d-flex justify-content-between align-item-center">
             <div class="me-4">
-                <h2 class="card-title text-primary mb-0 ">Status Shipment Last Mile</h2>
+                <h2 class="card-title text-primary mb-0 ">Status Shipment First Mile</h2>
             </div>
 
         </div>
     </div>
-    
-    <div class="card-body p-4">        
+
+    <div class="card-body p-4">
         <div class="table-responsive">
             <table id="table_coorporate" class="display table table-striped table-hover" width="100%" cellspacing="0">
                 <thead>
                     <tr>
                         <th>No</th>
-                        <th>Account_number </th>
-                        <th>Customer Name</th>                                                
+                        <th>Big Customer </th>
+                        <th>Customer Industry</th>
                         <th>Delivered</th>
                         <th>Un Inbound</th>
                         <th>Un Runsheet</th>
@@ -50,7 +50,7 @@
 
 <script type="text/javascript">
 
-   
+
 
     $(document).ready(function () {
 
@@ -96,7 +96,17 @@
             e.preventDefault();
             table.ajax.reload(null, false);
         });
+        // loop semua filter
+        formData.forEach(function (item) {
+            form.append($('<input>', {
+                type: 'hidden',
+                name: item.name,
+                value: item.value
+            }));
+        });
 
+        $('body').append(form);
+        form.submit();
     });
 
 

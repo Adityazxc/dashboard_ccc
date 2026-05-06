@@ -11,6 +11,7 @@ class Lm_model extends CI_Model
         parent::__construct();
         $this->load->database();
         $this->db_checker = $this->load->database('checker_pod', TRUE);
+        $this->db->query("SET SESSION sql_mode = (SELECT REPLACE(@@sql_mode, 'ONLY_FULL_GROUP_BY', ''))");
     }
 
     private function _getdatatables_lm()
@@ -72,26 +73,38 @@ class Lm_model extends CI_Model
 
     function count_all_lm()
     {
+
+        $post = $this->input->post();
         $this->db->select('*');
 
         $this->db->from('mv_shipment_lm');
+        $this->applyFilterDashboard($post);
 
 
         return $this->db->count_all_results();
     }
     var $lm_column_corp_order = array(
-        null, // kolom nomor urut        
-        'cust_name',
-        'pic_bdo',
-        'first_attemp',
-        'on_time_sla',
-        'over_sla',
-        'sla',
-        'total_amount',
+        null, // nomor urut
+        'customer_name',
+        'cust_type',
+        'delivered_count',
+        'un_inbound',
+        'un_runsheet',
+        'open_pod',
+        'undelivered',
+        'customers_request',
+        'irregularity',
+        'return_count',
+        'un_receiving',
+        'un_manifest',
+        'auto_close_irreg',
+        'auto_close_system',
+        'claim',
+        'total_shipment',
     );
 
     var $lm_column_corp_search = array(
-        'cust_name',
+        'customer_name',
         'pic_bdo',
         'first_attemp',
         'on_time_sla',
@@ -101,10 +114,38 @@ class Lm_model extends CI_Model
     );
     private function _corp_stat_shp()
     {
-        $this->db->select('*');
 
-        $this->db->from('mv_shipment_lm mv');
+        $post = $this->input->post();
 
+        $this->db->select("
+        cnote_cust_no,
+        customer_name,
+        cust_type,
+        pic_bdo,
+        SUM(delivered_count) as delivered_count,
+        SUM(un_inbound) as un_inbound,
+        SUM(un_runsheet) as un_runsheet,
+        SUM(open_pod) as open_pod,
+        SUM(undelivered) as undelivered,
+        SUM(customers_request) as customers_request,
+        SUM(irregularity) as irregularity,
+        SUM(return_count) as return_count,
+        SUM(un_receiving) as un_receiving,
+        SUM(un_manifest) as un_manifest,
+        SUM(auto_close_irreg) as auto_close_irreg,
+        SUM(auto_close_system) as auto_close_system,
+        SUM(claim) as claim,
+        SUM(total_shipment) as total_shipment
+    ");
+
+        $this->db->from('mv_shipment_lm');
+
+        $this->db->group_by('customer_name, cust_type');
+
+        $this->applyFilterDashboard($post);
+
+        // ini bikin cust_name "-" selalu di bawah
+        $this->db->order_by("CASE WHEN customer_name = '-' THEN 1 ELSE 0 END", "ASC");
         $i = 0;
 
         if (@$_POST['search']['value']) {
@@ -152,9 +193,38 @@ class Lm_model extends CI_Model
 
     function count_filtered_corp_stat_shp()
     {
-        $this->db->select('*');
+
+        $post = $this->input->post();
+
+        $this->db->select("
+        cnote_cust_no,
+        customer_name,
+        cust_type,
+        pic_bdo,
+        SUM(delivered_count) as delivered_count,
+        SUM(un_inbound) as un_inbound,
+        SUM(un_runsheet) as un_runsheet,
+        SUM(open_pod) as open_pod,
+        SUM(undelivered) as undelivered,
+        SUM(customers_request) as customers_request,
+        SUM(irregularity) as irregularity,
+        SUM(return_count) as return_count,
+        SUM(un_receiving) as un_receiving,
+        SUM(un_manifest) as un_manifest,
+        SUM(auto_close_irreg) as auto_close_irreg,
+        SUM(auto_close_system) as auto_close_system,
+        SUM(claim) as claim,
+        SUM(total_shipment) as total_shipment
+    ");
 
         $this->db->from('mv_shipment_lm');
+
+        $this->db->group_by('customer_name, cust_type');
+
+        $this->applyFilterDashboard($post);
+
+        // ini bikin cust_name "-" selalu di bawah
+        $this->db->order_by("CASE WHEN customer_name = '-' THEN 1 ELSE 0 END", "ASC");
 
 
         return $this->db->count_all_results();
@@ -196,10 +266,10 @@ class Lm_model extends CI_Model
     }
 
 
-    
+
     public function refresh_mv_shipment_lm()
     {
-        
+
         $this->db->query("
         SET SESSION sql_mode = REPLACE(
         REPLACE(@@sql_mode,'NO_ZERO_DATE',''),
@@ -230,7 +300,16 @@ class Lm_model extends CI_Model
             cnote_cust_no,
             un_inbound,
             un_runsheet,
-            cust_name,
+                open_pod,
+            undelivered,
+            customers_request,
+            irregularity,
+            un_receiving,
+            un_manifest,
+            auto_close_irreg,
+            auto_close_system,
+            claim,
+            customer_name,
             weight,
             first_attemp,
             on_time_sla,
@@ -241,6 +320,7 @@ class Lm_model extends CI_Model
             cust_type
         )
 
+       
         SELECT 
             DATE(s.tgl),
             s.origin,
@@ -248,39 +328,55 @@ class Lm_model extends CI_Model
             s.service,
             s.shipment,
             s.cnote_pay_type,
-            d.zona_delivery,
-            u.name,             
+            s.zona_delivery,
+            s.pic,             
             s.pod_code,
 
             COUNT(*),
             SUM(s.cnote_amount),
             SUM(s.cnote_weight),
 
-            SUM(CASE WHEN ps.filter='Delivered' THEN 1 ELSE 0 END),
+            SUM(CASE WHEN ps.Filter='Delivered' THEN 1 ELSE 0 END),
             SUM(CASE WHEN ps.filter='On Proses' THEN 1 ELSE 0 END),
             SUM(CASE WHEN ps.filter='Return' THEN 1 ELSE 0 END),
 
             MAX(s.cnote_cust_no),  -- ⬅️ FIX
-            SUM(CASE WHEN ps.pod_code='UN INBOUND' THEN 1 ELSE 0 END),
+            SUM(CASE WHEN ps.pod_kategori='UN INBOUND' THEN 1 ELSE 0 END),
+                                             
             SUM(CASE WHEN s.runsheet_date IS NULL THEN 1 ELSE 0 END),
+            SUM(CASE WHEN ps.pod_kategori='OPEN POD' THEN 1 ELSE 0 END),
+            SUM(CASE WHEN ps.pod_kategori='UNDEL' THEN 1 ELSE 0 END),
+            SUM(CASE WHEN ps.pod_kategori='CUSTOMER REQUEST' THEN 1 ELSE 0 END),
+            SUM(CASE WHEN ps.pod_kategori='IRREGULARITY' THEN 1 ELSE 0 END),
+            SUM(CASE WHEN ps.pod_kategori='UN RECEIVING' THEN 1 ELSE 0 END),
+            SUM(CASE 
+            WHEN s.runsheet_date IS NULL 
+            AND s.lm_date IS NULL 
+            AND s.sla_due_date IS NULL 
+            THEN 1 ELSE 0 
+            END),
+            SUM(CASE WHEN ps.pod_kategori='AUTO CLOSE IRREG' THEN 1 ELSE 0 END),
+            SUM(CASE WHEN ps.pod_kategori='AUTO CLOSE SYSTEM' THEN 1 ELSE 0 END),
+            SUM(CASE WHEN ps.pod_kategori='CLAIM BREACH' THEN 1 ELSE 0 END),
 
-            MAX(cl.cust_name),
+
+            MAX(s.big_grouping_cust),
             SUM(s.cnote_weight),   -- weight
             COUNT(CASE WHEN s.sm_date IS NOT NULL THEN 1 END),
 
-            SUM(CASE WHEN DATEDIFF(s.pod_date, s.cnot_date) <= d.sla THEN 1 ELSE 0 END),
-            SUM(CASE WHEN DATEDIFF(s.pod_date, s.cnot_date) > d.sla THEN 1 ELSE 0 END),
+            SUM(CASE WHEN DATEDIFF(s.pod_date, s.cnot_date) <= s.sla THEN 1 ELSE 0 END),
+            SUM(CASE WHEN DATEDIFF(s.pod_date, s.cnot_date) > s.sla THEN 1 ELSE 0 END),
 
             MAX(DATEDIFF(s.pod_date, s.cnot_date)),
-            u.username,            -- id_pic
-            cl.account_number,          -- id_cust
-            cl.cust_industry
+            s.id_pic,            -- id_pic
+            s.cnote_cust_no,          -- id_cust
+            s.cust_industry
 
-        FROM shipment_lm s
-        LEFT JOIN cus_lm cl ON s.cnote_cust_no = cl.account_number
-        LEFT JOIN checker_pod.users u ON cl.pic_bdo = u.username
+        FROM shipment_lm s        
+     
         LEFT JOIN pod_status ps ON s.pod_code = ps.pod_code
-        LEFT JOIN dest d ON s.origin = d.tariff_code
+        
+        
 
         WHERE s.tgl IS NOT NULL
         AND s.tgl != '0000-00-00'
@@ -292,14 +388,14 @@ class Lm_model extends CI_Model
             s.service,
             s.shipment,
             s.cnote_pay_type,
-            d.zona_delivery,
-            s.pod_code,
-            u.username,
-            u.name,
-            cl.account_number,
-            cl.cust_name,
-            cl.cust_industry;
+            s.zona_delivery,
+            s.pod_code,            
+            s.id_pic,
+            s.cnote_cust_no,
+            s.cust_name,
+            s.cust_industry;
         ";
+
 
         return $this->db->query($sql);
     }
@@ -307,7 +403,7 @@ class Lm_model extends CI_Model
     {
         $this->db->select('service, COUNT(*) as total');
         $this->db->from('mv_shipment_lm');
-       
+
 
         $this->db->group_by('service');
         $this->applyFilterDashboard($post);
@@ -322,8 +418,8 @@ class Lm_model extends CI_Model
         $this->db->select('cnote_pay_type, COUNT(*) as total');
         $this->db->from('mv_shipment_lm');
 
-       
-        
+
+
         $this->applyFilterDashboard($post);
         $this->db->group_by('cnote_pay_type');
 
@@ -340,7 +436,7 @@ class Lm_model extends CI_Model
                        SUM(on_proses_count) as on_proses_total');
         $this->db->from('mv_shipment_lm');
 
-       
+
 
 
         $this->applyFilterDashboard($post);
@@ -402,7 +498,7 @@ class Lm_model extends CI_Model
         }
 
         if (!empty($post['customer_lm'])) {
-            $this->db->where('id_cust', $post['customer_lm']); 
+            $this->db->where('customer_name', $post['customer_lm']);
         }
 
         if (!empty($post['type_cust']) && is_array($post['type_cust'])) {
@@ -429,98 +525,70 @@ class Lm_model extends CI_Model
     public function getDataNotApprove($post)
     {
         $this->db->select("
-            s.cnote_no,
-            s.cnot_date,
-            s.origin,
-            s.service,
-            s.zone_code,
-            s.cnote_pay_type,
-            s.shipment,
-            s.pod_code,
-            s.pod_date,
-            s.runsheet_date,
-            s.sm_date,
-            s.cnote_cust_no,
-    
-            d.city_name,
-            d.zona_delivery,
-            d.three_letter_code,
-            d.sla,
-    
-            p.filter,
-            p.pod_status as reason_code,
-    
-            c.pic_bdo,
-            c.cust_name,
-            c.big_grouping_cust,
+            s.*,
     
             DATEDIFF(s.pod_date, s.cnot_date) as total_days,
-            (DATEDIFF(s.pod_date, s.cnot_date) - d.sla) as carrier,
-            c.cust_industry
+            (DATEDIFF(s.pod_date, s.cnot_date) - s.sla) as carrier,            
         ");
-    
+
         $this->db->from('shipment_lm s');
-    
-        // JOIN tetap, tapi pastikan kolom join ada index
-        $this->db->join('dest d', 's.origin = d.tariff_code', 'left');
-        $this->db->join('pod_status p', 's.pod_code = p.pod_code', 'left');
-        $this->db->join('cus_lm c', 's.cnote_cust_no = c.account_number', 'left');
-    
+
+
         $this->applyFilterDownload($post);
-    
+
         return $this->db->get()->result_array();
     }
 
     private function applyFilterDownload($post)
     {
         // // WAJIB ADA FILTER TANGGAL
-        // if (!empty($post['dateFrom']) && !empty($post['dateThru'])) {
-        //     $this->db->where('s.tgl >=', $post['dateFrom']);
-        //     $this->db->where('s.tgl <=', $post['dateThru']);
-        // } else {
-        //     // safety biar ga ambil semua data
-        //     $this->db->limit(5000);
-        // }
-    
+        if (!empty($post['dateFrom']) && !empty($post['dateThru'])) {
+            $this->db->where('s.tgl >=', $post['dateFrom']);
+            $this->db->where('s.tgl <=', $post['dateThru']);
+        } else {
+            // safety biar ga ambil semua data
+            $this->db->limit(5000);
+        }
+
         if (!empty($post['origin'])) {
             $this->db->where('s.origin', $post['origin']);
         }
-    
+
         if (!empty($post['zone'])) {
-            $this->db->where('s.zone_code', $post['zone']);
+            $this->db->where('zone_code', $post['zone']);
         }
-    
+
         if (!empty($post['category_shipment'])) {
             $this->db->where('s.shipment', $post['category_shipment']);
         }
-    
+
         if (!empty($post['service'])) {
             $this->db->where('s.service', $post['service']);
         }
-    
+
         if (!empty($post['cod_flag'])) {
             $this->db->where('s.cnote_pay_type', $post['cod_flag']);
         }
-    
+
         if (!empty($post['status_pod']) && is_array($post['status_pod']) && count($post['status_pod']) <= 10) {
             $this->db->where_in('s.pod_code', $post['status_pod']);
         }
-    
+
         if (!empty($post['customer_lm'])) {
-            $this->db->where('s.cnote_cust_no', $post['customer_lm']);
+            $this->db->where('s.big_grouping_cust', $post['customer_lm']);
         }
-    
+
         // JOIN FILTER (pastikan ada index!)
         if (!empty($post['zone_delivery'])) {
-            $this->db->where('d.zona_delivery', $post['zone_delivery']);
+            $this->db->where('s.zona_delivery', $post['zone_delivery']);
         }
-    
+
         if (!empty($post['pic'])) {
-            $this->db->where('c.pic_bdo', $post['pic']);
+            $this->db->where('s.id_pic', $post['pic']);
         }
-    
+
         if (!empty($post['type_cust']) && is_array($post['type_cust'])) {
-            $this->db->where_in('c.cust_industry', $post['type_cust']);
+            $this->db->where_in('s.cust_industry', $post['type_cust']);
         }
     }
 }
