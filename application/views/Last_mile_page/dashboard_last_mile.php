@@ -4,115 +4,165 @@
         box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
         transform: translateY(-3px);
     }
+
+    .stats-value small {
+        font-size: 13px;
+        margin-top: 4px;
+    }
+
+    .stats-card {
+        border: none;
+        border-radius: 18px;
+        overflow: hidden;
+        transition: all .25s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, .06);
+    }
+
+    .stats-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 24px rgba(0, 0, 0, .12);
+    }
+
+    .stats-icon {
+        width: 58px;
+        height: 58px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 26px;
+        color: #fff;
+    }
+
+    .bg-purple {
+        background: linear-gradient(135deg, #7b61ff, #5b42f3);
+    }
+
+    .bg-green {
+        background: linear-gradient(135deg, #1cc88a, #0fa968);
+    }
+
+    .bg-orange {
+        background: linear-gradient(135deg, #ffb547, #ff8c00);
+    }
+
+    .bg-blue {
+        background: linear-gradient(135deg, #36b9cc, #258391);
+    }
+
+    .bg-red {
+        background: linear-gradient(135deg, #ff6b6b, #e63946);
+    }
+
+    .stats-title {
+        font-size: 13px;
+        color: #8c8c8c;
+        margin-bottom: 4px;
+    }
+
+    .stats-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #2d3436;
+        line-height: 1;
+    }
 </style>
-<div class="row row-cols-1 row-cols-sm-2 row-cols-md-5">
-    <div class="col">
-        <div class="card card-stats card-round">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-3 me-0 pe-0">
-                        <div class="icon-big text-center">
-                            <i class="bi bi-safe"></i>
-                        </div>
-                    </div>
-                    <div class="col-9 col-stats ms-0 ps-0">
-                        <div class="numbers">
-                            <p class="card-category">Cnote</p>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800 total_shipment"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- Total Paid -->
-    <div class="col">
-        <div class="card card-stats card-round">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-3 me-0 pe-0">
-                        <div class="icon-big text-center">
-                            <i class="bi bi-cash-stack"></i>
-                        </div>
-                    </div>
-                    <div class="col-9 col-stats ms-0 ps-0">
-                        <div class="numbers">
-                            <p class="card-category">Ammount</p>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800 total_amount"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- Transfer -->
 
-    <div class="col">
-        <div class="card card-stats card-round">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-3 me-0 pe-0">
-                        <div class="icon-big text-center">
-                            <i class="fas fa-credit-card"></i> <!-- Ikon check untuk sesuai -->
-                        </div>
-                    </div>
-                    <div class="col-9 col-stats ms-0 ps-0">
-                        <div class="numbers">
-                            <p class="card-category">On Proses</p>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800 on_proses_count"></div>
-                        </div>
-                    </div>
+<div class="row g-4">
+
+    <!-- Total Shipment -->
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card stats-card h-100">
+            <div class="card-body d-flex align-items-center">
+
+                <div class="stats-icon bg-purple me-3">
+                    <i class="bi bi-box-seam"></i>
                 </div>
+
+                <div>
+                    <div class="stats-title">Total Shipment</div>
+                    <div class="stats-value total_shipment">0</div>
+                </div>
+
             </div>
         </div>
     </div>
 
+    <!-- Amount -->
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card stats-card h-100">
+            <div class="card-body d-flex align-items-center">
 
-    <!-- Cash -->
-    <div class="col">
-        <div class="card card-stats  card-round">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-3 me-0 pe-0">
-                        <div class="icon-big text-center">
-                            <i class="fas fa-hand-holding-usd"></i> <!-- Ikon X untuk tidak sesuai -->
-                        </div>
-                    </div>
-                    <div class="col-9 col-stats ms-0 ps-0">
-                        <div class="numbers">
-                            <p class="card-category">Delivered</p>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800 delivered_count"></div>
-                        </div>
-                    </div>
+                <div class="stats-icon bg-green me-3">
+                    <i class="bi bi-cash-stack"></i>
                 </div>
+
+                <div>
+                    <div class="stats-title">Total Amount</div>
+                    <div class="stats-value total_amount">0</div>
+                </div>
+
             </div>
         </div>
     </div>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <!-- Selisih Penyetoran -->
 
-    <div class="col">
-        <div class="card card-stats card-round">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-3 me-0 pe-0">
-                        <div class="icon-big text-center">
-                            <i class="material-icons">account_balance_wallet</i></button>
-                        </div>
-                    </div>
-                    <div class="col-9 col-stats ms-0 ps-0">
-                        <div class="numbers">
-                            <p class="card-category">Return</p>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800 return_count"></div>
-                        </div>
-                    </div>
+    <!-- On Proses -->
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card stats-card h-100">
+            <div class="card-body d-flex align-items-center">
+
+                <div class="stats-icon bg-orange me-3">
+                    <i class="bi bi-arrow-repeat"></i>
                 </div>
+
+                <div>
+                    <div class="stats-title">On Process</div>
+                    <div class="stats-value on_proses_count">0</div>
+                </div>
+
             </div>
         </div>
     </div>
+
+    <!-- Delivered -->
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card stats-card h-100">
+            <div class="card-body d-flex align-items-center">
+
+                <div class="stats-icon bg-blue me-3">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+
+                <div>
+                    <div class="stats-title">Delivered</div>
+                    <div class="stats-value delivered_count">0</div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Return -->
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card stats-card h-100">
+            <div class="card-body d-flex align-items-center">
+
+                <div class="stats-icon bg-red me-3">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </div>
+
+                <div>
+                    <div class="stats-title">Return</div>
+                    <div class="stats-value return_count">0</div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
 </div>
 
-<div class="row">
+<div class="row mt-3">
     <div class="col-md-4">
         <div class="card">
             <div class="card-header">
@@ -264,19 +314,58 @@
             data: formData,
             success: (r) => {
 
-                console.log("hehe");
-                console.log(r.post);
 
 
+                let totalShipment = parseInt(r.total_shipment || 0);
+                let delivered = parseInt(r.delivered_count || 0);
+                let onProses = parseInt(r.on_proses_count || 0);
+                let returned = parseInt(r.return_count || 0);
+                // HITUNG PERSENTASE
+                let deliveredPercent = totalShipment > 0
+                    ? ((delivered / totalShipment) * 100).toFixed(1)
+                    : 0;
 
-                $('.total_shipment').text(formatNum(r.total_shipment || 0));
-                $('.delivered_count').text(formatNum(r.delivered_count || 0));
-                $('.on_proses_count').text(formatNum(r.on_proses_count || 0));
+                let onProsesPercent = totalShipment > 0
+                    ? ((onProses / totalShipment) * 100).toFixed(1)
+                    : 0;
+
+                let returnPercent = totalShipment > 0
+                    ? ((returned / totalShipment) * 100).toFixed(1)
+                    : 0;
+
+                // TOTAL
+                $('.total_shipment').text(formatNum(totalShipment));
+
+                // DELIVERED
+                $('.delivered_count').html(`
+            ${formatNum(delivered)}
+            <small class="d-block text-success fw-semibold">
+                ${deliveredPercent}%
+            </small>
+        `);
+
+                // ON PROSES
+                $('.on_proses_count').html(`
+            ${formatNum(onProses)}
+            <small class="d-block text-warning fw-semibold">
+                ${onProsesPercent}%
+            </small>
+        `);
+
+                // RETURN
+                $('.return_count').html(`
+            ${formatNum(returned)}
+            <small class="d-block text-danger fw-semibold">
+                ${returnPercent}%
+            </small>
+        `);
+
+                // AMOUNT
                 $('.total_amount').text(formatNum(r.total_amount || 0));
-                $('.return_count').text(formatNum(r.return_count || 0));
-
 
             },
+
+        
             error: (xhr, status, error) => {
                 console.error("AJAX ERROR:", xhr.responseText);
             }

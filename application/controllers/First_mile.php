@@ -317,25 +317,28 @@ class First_mile extends CI_Controller
         $no = $this->input->post('start', true);
         foreach ($list as $item) {
 
-
             $no++;
             $row = array();
             $row[] = '<small style="font-size:12px">' . $no . '</small>';
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->cust_name) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->cust_type) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->delivered_count) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->un_inbound) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->un_runsheet) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->cust_type) . '</small>'; 
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->kategori_delivered) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->un_inbound) . '</small>';            
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->open_pod) . '</small>';
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->undelivered) . '</small>';
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->customers_request) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->irregularity) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->return_count) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->un_receiving) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->un_manifest) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->irregularity) . '</small>';            
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->un_receiving) . '</small>';            
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->auto_close_irreg) . '</small>';
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->auto_close_system) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->claim) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->claim) . '</small>';            
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->un_status_pod) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->declare_missing) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->destroy) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->internal_problem) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->other) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->kategori_return) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->warehouse) . '</small>';
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->total_shipment) . '</small>';
 
 
@@ -366,7 +369,6 @@ class First_mile extends CI_Controller
             $row = array();
             $row[] = '<small style="font-size:12px">' . $no . '</small>';
             if ($item->cust_name == null || $item->cust_name == '-') {
-
                 $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->cnote_cust_no) . '</small>';
             } else {
                 $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->cust_name) . '</small>';
@@ -375,8 +377,8 @@ class First_mile extends CI_Controller
             // $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->cnote_cust_no) . '</small>';
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->id_pic) . '</small>';
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->delivered_count) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->open_pod) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->return_count) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->on_proses_count) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->return_count) . '</small>';            
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->total_shipment) . '</small>';
 
 
@@ -498,7 +500,7 @@ class First_mile extends CI_Controller
             }
 
             // mapping khusus MP / RETAIL
-            if (in_array($c['segmentasi'], ['MARKETPLACE', 'RETAIL'])) {
+            if (in_array($c['segmentasi'], ['MARKETPLACE', 'RETAIL','AGREGATOR'])) {
 
                 $name_key = $this->normalize_name($c['cust_name']);
                 $addr_key = $this->normalize_address($c['address']);
@@ -543,7 +545,7 @@ class First_mile extends CI_Controller
         $sheet = $reader->load($file_path)->getActiveSheet();
 
         $batch = [];
-        $chunk = 5000;
+        $chunk = 500;
 
         $this->db->query("SET autocommit=0");
         $this->db->query("SET unique_checks=0");
@@ -577,130 +579,123 @@ class First_mile extends CI_Controller
             $cust_id = $cells[17] ?? null;
             $shipper_raw = $cells[18] ?? '';
             $addr_raw = $cells[19] ?? '';
-
+            
             $shipper_norm = $this->normalize_name($shipper_raw);
             $addr_norm = $this->normalize_address($addr_raw);
-
+            
             $cust_name = '-';
             $grouping_cust = '-';
             $cust_type = '-';
             $pic_bdo = '-';
-
+            
             $is_mp = false;
-
+            
             /* ===============================
                🔥 DETEKSI MP
             ================================ */
-            if (!empty($cust_id) && isset($cust_map[$cust_id])) {
-
+            
+            // cust_id tidak ada → masuk MP flow
+            if (empty($cust_id) || !isset($cust_map[$cust_id])) {
+            
+                $is_mp = true;
+            
+            } else {
+            
                 foreach ($cust_map[$cust_id] as $c) {
-                    if (in_array(strtoupper($c['segmentasi']), ['MARKETPLACE', 'RETAIL'])) {
+            
+                    $segmentasi = strtoupper(trim($c['segmentasi'] ?? ''));
+            
+                    if (in_array($segmentasi, ['MARKETPLACE', 'RETAIL', 'AGREGATOR'])) {
                         $is_mp = true;
                         break;
                     }
                 }
             }
-
+            
             /* ===============================
                ✅ NON MP → pakai cust_id
             ================================ */
-            if (!$is_mp && !empty($cust_id) && isset($cust_map[$cust_id])) {
-
+            if (
+                !$is_mp &&
+                !empty($cust_id) &&
+                isset($cust_map[$cust_id])
+            ) {
+            
                 $c = $cust_map[$cust_id][0];
-
+            
                 $cust_name = $c['cust_name'] ?? '-';
                 $grouping_cust = $c['grouping_cust'] ?? '-';
                 $cust_type = $c['segmentasi'] ?? '-';
+            
                 $pic_bdo = $user_map[$c['pic']] ?? '-';
             }
-
+            
             /* ===============================
-               🔥 MP / RETAIL LOGIC
+               🔥 MP / RETAIL / AGREGATOR
             ================================ */
-            // ================= MP =================
             else {
-
+            
+                // 🔥 exact normalized lookup
                 $candidate_list = $mp_index[$shipper_norm] ?? [];
             
-                // 🔥 fallback (word match)
-                if (empty($candidate_list) && $shipper_norm !== '') {
-            
-                    foreach ($mp_index as $key => $list) {
-            
-                        $ship_words = explode(' ', $shipper_norm);
-                        $key_words  = explode(' ', $key);
-                        
-                        $intersect = array_intersect($ship_words, $key_words);
-                        $match_count = count($intersect);
-                        
-                        // 🔥 RULE BARU
-                        $is_match = false;
-                        
-                        // CASE 1: exact sama
-                        if ($shipper_norm === $key) {
-                            $is_match = true;
-                        }
-                        
-                        // CASE 2: multi kata (>=2 kata sama)
-                        elseif ($match_count >= 2) {
-                            $is_match = true;
-                        }
-                        
-                        // CASE 3: satu kata → HARUS EXACT (biar MEGA gak ke MEGA SPORT)
-                        elseif ($match_count === 1) {
-                        
-                            // cuma boleh match kalau dua-duanya 1 kata
-                            if (count($ship_words) === 1 && count($key_words) === 1) {
-                                $is_match = true;
-                            }
-                        }
-                        
-                        if ($is_match) {
-                            $candidate_list = $list;
-                            break;
-                        }
-                    }
-                }
-            
-                // ✅ 1 data → langsung pakai
+                /* ===============================
+                   ✅ SINGLE MATCH
+                ================================ */
                 if (count($candidate_list) === 1) {
             
                     $c = $candidate_list[0];
             
-                    $cust_name     = $c['cust_name'];
-                    $grouping_cust = $c['grouping_cust'];
-                    $cust_type     = $c['segmentasi'];
-                    $pic_bdo       = $user_map[$c['pic']] ?? '-';
+                    $cust_name = $c['cust_name'] ?? '-';
+                    $grouping_cust = $c['grouping_cust'] ?? '-';
+                    $cust_type = $c['segmentasi'] ?? '-';
+            
+                    $pic_bdo = $user_map[$c['pic']] ?? '-';
                 }
             
-                // 🔥 duplicate → pakai address
+                /* ===============================
+                   🔥 DUPLICATE MATCH → ADDRESS
+                ================================ */
                 elseif (count($candidate_list) > 1) {
             
                     foreach ($candidate_list as $c) {
             
                         if (
-                            $addr_norm &&
-                            $c['addr_key'] &&
+                            !empty($addr_norm) &&
+                            !empty($c['addr_key']) &&
                             (
-                                strpos($addr_norm, $c['addr_key']) !== false ||
-                                strpos($c['addr_key'], $addr_norm) !== false
+                                strpos((string)$addr_norm, (string)$c['addr_key']) !== false ||
+                                strpos((string)$c['addr_key'], (string)$addr_norm) !== false
                             )
                         ) {
-                            $cust_name     = $c['cust_name'];
-                            $grouping_cust = $c['grouping_cust'];
-                            $cust_type     = $c['segmentasi'];
-                            $pic_bdo       = $user_map[$c['pic']] ?? '-';
+            
+                            $cust_name = $c['cust_name'] ?? '-';
+                            $grouping_cust = $c['grouping_cust'] ?? '-';
+                            $cust_type = $c['segmentasi'] ?? '-';
+            
+                            $pic_bdo = $user_map[$c['pic']] ?? '-';
+            
                             break;
                         }
                     }
+            
+                    // 🔥 fallback duplicate → ambil pertama
+                    // if ($cust_name === '-') {
+            
+                    //     $c = $candidate_list[0];
+            
+                    //     $cust_name = $c['cust_name'] ?? '-';
+                    //     $grouping_cust = $c['grouping_cust'] ?? '-';
+                    //     $cust_type = $c['segmentasi'] ?? '-';
+            
+                    //     $pic_bdo = $user_map[$c['pic']] ?? '-';
+                    // }
                 }
             
-
                 // ❗ kalau gak match → tetap "-"
             }
             $kode_cabang = $cells[10] ?? null;
 
-            $province = $dest_map[$kode_cabang]['province_name'] ?? null;
+            $province = $dest_map[$kode_cabang]['region_in_jne'] ?? null;
             $city = $dest_map[$kode_cabang]['city_name'] ?? null;
             $zona_delivery = $dest_map[$kode_cabang]['zona_delivery'] ?? null;
             $three_letter_code = $dest_map[$kode_cabang]['three_letter_code'] ?? null;
@@ -798,7 +793,8 @@ class First_mile extends CI_Controller
 
             ];
 
-            if (count($batch) >= $chunk) {
+
+            if (count($batch) >= $chunk || strlen(json_encode($batch)) > 5000000) {
                 $this->insert_batch_on_duplicate('shipment_fm', $batch);
                 $batch = [];
             }
@@ -810,7 +806,7 @@ class First_mile extends CI_Controller
 
 
         $this->db->trans_complete();
-        // $this->safe_refresh_mv();
+        $this->safe_refresh_mv();
 
 
         $this->db->query("SET autocommit=1");
@@ -850,31 +846,69 @@ class First_mile extends CI_Controller
 
     private function normalize_name($text)
     {
-        $text = strtoupper(trim($text ?? ''));
-
-        $text = str_replace(['_', '-', '.'], ' ', $text);
-
-        $text = preg_replace('/\s+/', ' ', $text);
-
-        return trim($text); // 🔥 WAJIB TRIM LAGI
+        $text = strtolower(trim($text ?? ''));
+    
+        // buang semua selain huruf & angka
+        $text = preg_replace('/[^a-z0-9]/', '', $text);
+    
+        return $text;
     }
 
     private function normalize_address($text)
     {
-        $text = strtoupper($text ?? '');
-
-        // samakan kata
-        $text = str_replace(['JALAN', 'JL.', 'JL '], 'JL', $text);
-
-        // buang simbol
+        $text = strtoupper(trim($text ?? ''));
+    
+        // samakan istilah
+        $replace = [
+            'JALAN' => 'JL',
+            'JL.' => 'JL',
+            'JL ' => 'JL ',
+            'RT/' => 'RT ',
+            'RW/' => 'RW ',
+            '-' => ' ',
+            ',' => ' ',
+            '.' => ' ',
+        ];
+    
+        $text = str_replace(
+            array_keys($replace),
+            array_values($replace),
+            $text
+        );
+    
+        // buang karakter aneh
         $text = preg_replace('/[^A-Z0-9 ]/', '', $text);
-
+    
+        // rapihin spasi
         $text = preg_replace('/\s+/', ' ', $text);
-
+    
+        // pecah kata
         $words = explode(' ', trim($text));
-
-        // ambil bagian penting saja
-        return implode('', array_slice($words, 0, 5));
+    
+        // 🔥 buang kata terlalu pendek / tidak penting
+        $filtered = [];
+    
+        foreach ($words as $w) {
+    
+            if (
+                strlen($w) >= 2 &&
+                !in_array($w, [
+                    'RT',
+                    'RW',
+                    'NO',
+                    'KEL',
+                    'KEC',
+                    'DESA',
+                    'KAB',
+                    'KOTA'
+                ])
+            ) {
+                $filtered[] = $w;
+            }
+        }
+    
+        // 🔥 ambil 6 kata pertama
+        return implode('', array_slice($filtered, 0, 6));
     }
 
 
@@ -953,7 +987,8 @@ class First_mile extends CI_Controller
             'Hari',
             'Tgl',
             'Tgl Im',
-            'Kode Cabang',
+            'Region Destination',
+            'Branch Destination',
             'Service',
             'Area',
             'Zona Delivery',
@@ -1023,7 +1058,8 @@ class First_mile extends CI_Controller
                     $d['hari_rec'] ?? '',
                     $d['tgl'] ?? '',
                     $d['tgl_lm'] ?? '',
-                    $d['kode_cabang'] ?? '',
+                    $d['province_name'] ?? '',
+                    $d['city_name'] ?? '',
                     $d['service'] ?? '',
                     $d['area'] ?? '',
                     $d['zona_delivery'] ?? '',
@@ -1089,9 +1125,7 @@ class First_mile extends CI_Controller
 
             // print_r($data);
         }
-        // INSERT DATA SEKALI (INI YANG NGEGAS ⚡)
-        // $sheet->fromArray($rows, NULL, 'A2');
-
+       
         $writer = new \PhpOffice\PhpSpreadsheet\Writer\Csv($spreadsheet);
         $filename = date('Y-m-d') . ' Summary First Mile.csv';
 

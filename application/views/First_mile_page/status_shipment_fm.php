@@ -21,18 +21,22 @@
                         <th>Big Customer </th>
                         <th>Customer Industry</th>
                         <th>Delivered</th>
-                        <th>Un Inbound</th>
-                        <th>Un Runsheet</th>
+                        <th>UN Inbound</th>
                         <th>Open POD</th>
-                        <th>Undel</th>
+                        <th>Undelivered</th>
                         <th>Customer Request</th>
                         <th>Irregularity</th>
-                        <th>Return</th>
                         <th>UN Receiving</th>
-                        <th>UN Manifest</th>
                         <th>Auto Close IRREG</th>
                         <th>Auto Close System</th>
                         <th>Claim</th>
+                        <th>Un Status Shipment</th>
+                        <th>Declare Missing</th>
+                        <th>Destroy</th>
+                        <th>Internal Problem</th>
+                        <th>Other</th>
+                        <th>Kategori Return</th>
+                        <th>Warehouse</th>
                         <th>Grand Total</th>
 
                     </tr>

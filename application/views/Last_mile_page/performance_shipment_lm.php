@@ -1,4 +1,4 @@
-<?php $this->load->view('form_page/filter_form_lm')?>
+<?php $this->load->view('form_page/filter_form_Lm')?>
 
 
 
@@ -6,7 +6,7 @@
     <div class="card-header text-white px-4">
         <div class="d-flex justify-content-between align-item-center">
             <div class="me-4">
-                <h2 class="card-title text-primary mb-0 ">Performance Shipment LM</h2>
+                <h2 class="card-title text-primary mb-0 ">Performance Shipment Last Mile</h2>
             </div>
 
         </div>
@@ -18,13 +18,12 @@
                 <thead>
                     <tr>
                         <th>No</th>
-                        <th>Customer Name</th>                    
-                        <th>PIC</th>                    
-                        <th>First Attemp</th>
-                        <th>On Time SLA</th>                                                
-                        <th>Over SLA</th>
+                        <th>Customer</th>
+                        <th>PIC</th>
+                        <th>Delivered</th>
+                        <th>On Proses</th>                        
                         <th>Return</th>
-                        <th>Grand Total</th>                        
+                        <th>Grand Total</th>                    
 
                     </tr>
                 </thead>

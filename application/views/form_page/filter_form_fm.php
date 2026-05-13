@@ -43,8 +43,8 @@ $grouping_customers = json_decode($get_grouping_customer, true);
                 <select class="form-select select2" name="origin" id="origin" <?= (!$full_access) ? 'disabled' : '' ?>>
                     <option value="">-- Pilih Origin --</option>
                     <?php foreach ($get_origins_array as $get_origin): ?>
-                        <option value="<?= $get_origin['province_name'] ?>" <?= (!$full_access && $get_origin['province_name'] == $origin) ? 'selected' : '' ?>>
-                            <?= $get_origin['province_name'] ?>
+                        <option value="<?= $get_origin['region_in_jne'] ?>" <?= (!$full_access && $get_origin['region_in_jne'] == $origin) ? 'selected' : '' ?>>
+                            <?= $get_origin['region_in_jne'] ?>
                         </option>
                     <?php endforeach; ?>
                 </select>

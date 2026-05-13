@@ -1,4 +1,4 @@
-<?php $this->load->view('form_page/filter_form_lm')?>
+<?php $this->load->view('form_page/filter_form_lm') ?>
 
 
 
@@ -11,28 +11,28 @@
 
         </div>
     </div>
-    
-    <div class="card-body p-4">        
+
+    <div class="card-body p-4">
         <div class="table-responsive">
             <table id="table_coorporate" class="display table table-striped table-hover" width="100%" cellspacing="0">
                 <thead>
                     <tr>
                         <th>No</th>
                         <th>Big Customer </th>
-                        <th>Customer Industry</th>                                                
+                        <th>Customer Industry</th>
                         <th>Delivered</th>
-                        <th>Un Inbound</th>
-                        <th>Un Runsheet</th>
-                        <th>Open POD</th>
-                        <th>Undel</th>
+                        <th>Undelivered</th>
+                        <th>UN Runsheet</th>
                         <th>Customer Request</th>
                         <th>Irregularity</th>
                         <th>Return</th>
-                        <th>UN Receiving</th>
-                        <th>UN Manifest</th>
+                        <th>UN Inbound</th>
+                        <th>Un Receiving</th>
+                        <th>Un Manifest</th>
+                        <th>Open Pod</th>
                         <th>Auto Close IRREG</th>
                         <th>Auto Close System</th>
-                        <th>Claim</th>
+                        <th>Claim</th>                       
                         <th>Grand Total</th>
 
                     </tr>
@@ -50,7 +50,7 @@
 
 <script type="text/javascript">
 
-   
+
 
     $(document).ready(function () {
 

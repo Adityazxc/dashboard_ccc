@@ -10,6 +10,7 @@ class Customers_lm extends CI_Controller
     {
         parent::__construct();
         $this->load->model('Customers_lm_model');
+        $this->load->model('Lm_model');
         $this->load->model('Users_model');
 
         $this->load->library('session');
@@ -45,6 +46,7 @@ class Customers_lm extends CI_Controller
             $data['role'] = $user_role;
             $data['zone'] = $zone;
             $data['get_users_ccc'] = $get_users_ccc;
+            $data['get_type_cust'] = json_encode($this->Lm_model->_get_type_cust());
 
 
 

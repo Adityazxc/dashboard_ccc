@@ -289,33 +289,26 @@ class Last_mile extends CI_Controller
         $data = array();
         $no = $this->input->post('start', true);
         foreach ($list as $item) {
-
-
             $no++;
             $row = array();
             $row[] = '<small style="font-size:12px">' . $no . '</small>';
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->customer_name) . '</small>';
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->cust_type) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->delivered_count) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->un_inbound) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->un_runsheet) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->open_pod) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->kategori_delivered) . '</small>';
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->undelivered) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->un_runsheet) . '</small>';            
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->customers_request) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->irregularity) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->irregularity) . '</small>';            
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->return_count) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->un_receiving) . '</small>';
+            // $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->kategori_return) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->un_inbound) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->un_receiving) . '</small>';            
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->un_manifest) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->auto_close_irreg) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->auto_close_system) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->open_pod) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->auto_close_irreg) . '</small>';            
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->auto_close_system) . '</small>';            
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->claim) . '</small>';
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->total_shipment) . '</small>';
-
-
-
-
-
-
 
             $data[] = $row;
         }
@@ -347,9 +340,8 @@ class Last_mile extends CI_Controller
             }
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->pic_bdo) . '</small>';
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->delivered_count) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->un_inbound) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->un_runsheet) . '</small>';
-            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->open_pod) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->on_proses_count) . '</small>';
+            $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->return_count) . '</small>';            
             $row[] = '<small style="font-size:12px">' . htmlspecialchars($item->total_shipment) . '</small>';
 
 

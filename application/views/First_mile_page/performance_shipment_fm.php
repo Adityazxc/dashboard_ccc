@@ -21,8 +21,8 @@
                         <th>Customer</th>
                         <th>PIC</th>
                         <th>Delivered</th>
-                        <th>Open Pod</th>                        
-                        <th>Return</th>
+                        <th>On Proses</th>                        
+                        <th>Return</th>                        
                         <th>Grand Total</th>                    
 
                     </tr>

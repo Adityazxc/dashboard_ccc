@@ -198,8 +198,11 @@ class Fm_model extends CI_Model
         cust_type,
         id_pic,
         SUM(delivered_count) as delivered_count,
+        SUM(kategori_delivered) as kategori_delivered,
+        SUM(un_status_pod) as un_status_pod,
         SUM(un_inbound) as un_inbound,
-        SUM(un_runsheet) as un_runsheet,
+        SUM(on_proses_count) as on_proses_count,
+        SUM(un_runsheet) as un_runsheet,        
         SUM(open_pod) as open_pod,
         SUM(undelivered) as undelivered,
         SUM(customers_request) as customers_request,
@@ -210,13 +213,19 @@ class Fm_model extends CI_Model
         SUM(auto_close_irreg) as auto_close_irreg,
         SUM(auto_close_system) as auto_close_system,
         SUM(claim) as claim,
+        SUM(declare_missing) as declare_missing,
+        SUM(destroy) as destroy,
+        SUM(internal_problem) as internal_problem,
+        SUM(other) as other,
+        SUM(warehouse) as warehouse,
+        SUM(kategori_return) as kategori_return,
         SUM(total_shipment) as total_shipment
     ");
 
         $this->db->from('mv_shipment_fm mv');
-        // $this->db->where('cust_name !=', '-');
+        $this->db->where('cust_name !=', '-');
         $this->db->group_by('cust_name, cust_type');
-        $this->db->order_by("CASE WHEN cust_name = '-' THEN 1 ELSE 0 END", "ASC");
+        // $this->db->order_by("CASE WHEN cust_name = '-' THEN 1 ELSE 0 END", "ASC");
         $this->applyFilterDashboard($post);
 
         $i = 0;
@@ -275,8 +284,11 @@ class Fm_model extends CI_Model
         cust_type,
         id_pic,
         SUM(delivered_count) as delivered_count,
+        SUM(kategori_delivered) as kategori_delivered,
+        SUM(un_status_pod) as un_status_pod,
         SUM(un_inbound) as un_inbound,
-        SUM(un_runsheet) as un_runsheet,
+        SUM(on_proses_count) as on_proses_count,
+        SUM(un_runsheet) as un_runsheet,        
         SUM(open_pod) as open_pod,
         SUM(undelivered) as undelivered,
         SUM(customers_request) as customers_request,
@@ -287,13 +299,19 @@ class Fm_model extends CI_Model
         SUM(auto_close_irreg) as auto_close_irreg,
         SUM(auto_close_system) as auto_close_system,
         SUM(claim) as claim,
+        SUM(declare_missing) as declare_missing,
+        SUM(destroy) as destroy,
+        SUM(internal_problem) as internal_problem,
+        SUM(other) as other,
+        SUM(warehouse) as warehouse,
+        SUM(kategori_return) as kategori_return,
         SUM(total_shipment) as total_shipment
     ");
 
         $this->db->from('mv_shipment_fm mv');
-        // $this->db->where('cust_name !=', '-');
+        $this->db->where('cust_name !=', '-');
         $this->db->group_by('cust_name, cust_type');
-        $this->db->order_by("CASE WHEN cust_name = '-' THEN 1 ELSE 0 END", "ASC");
+        // $this->db->order_by("CASE WHEN cust_name = '-' THEN 1 ELSE 0 END", "ASC");
         $this->applyFilterDashboard($post);
 
         return $this->db->count_all_results();
@@ -335,7 +353,7 @@ class Fm_model extends CI_Model
         $this->db->query("TRUNCATE mv_shipment_fm");
 
         $sql = "
-        INSERT IGNORE INTO mv_shipment_fm (
+        INSERT INTO mv_shipment_fm (
     tgl, service, shipment, cnote_pay_type,zone_delivery,
     pic_bdo, pod_code,
     total_shipment, total_amount, total_weight,
@@ -348,7 +366,15 @@ class Fm_model extends CI_Model
     claim, irregularity,
     cust_name, sm_date,
     id_pic, cust_type,
-    origin, zone_code
+    origin, zone_code,
+    un_status_pod,
+    declare_missing,
+    destroy,
+    internal_problem,
+    other,
+    kategori_return,
+    warehouse,
+    kategori_delivered
 )
 
 SELECT
@@ -362,12 +388,20 @@ SELECT
     COALESCE(s.pic  ,'-') AS pic_bdo,
     COALESCE(s.pod_code,'-') AS pod_code,
 
-    COUNT(*) AS total_shipment,
+    COUNT(DISTINCT s.cnote_no) AS total_shipment,
     SUM(s.cnote_amount) AS total_amount,
     SUM(s.cnote_weight) AS total_weight,
 
     SUM(ps.filter='Delivered') AS delivered_count,
-    SUM(ps.filter='On Proses') AS on_proses_count,
+         SUM(
+    CASE 
+        WHEN ps.filter = 'On Proses'
+          OR s.pod_code IS NULL
+          OR TRIM(s.pod_code) = ''
+        THEN 1
+        ELSE 0
+    END
+),
     SUM(ps.filter='Return') AS return_count,
 
     COALESCE(NULLIF(s.cnote_cust_no,''), '-') AS cnote_cust_no,
@@ -392,7 +426,22 @@ SELECT
     s.pic AS pic,
     s.cust_type AS cust_type,
     s.province_name AS origin,
-    s.city_name AS zone_code
+    s.city_name AS zone_code,
+    SUM(CASE 
+    WHEN
+    trim(s.pod_code)=''
+    OR s.pod_code IS NULL
+    THEN 1
+    ELSE 0
+    END
+    ),
+    SUM(ps.pod_kategori='DECLARE MISSING') AS declare_missing,
+    SUM(ps.pod_kategori='DESTROY') AS destroy,
+    SUM(ps.pod_kategori='INTERNAL PROBLEM') AS internal_problem,
+    SUM(ps.pod_kategori='OTHER') AS other,
+    SUM(ps.pod_kategori='RETURN') AS kategori_return,
+    SUM(ps.pod_kategori='WAREHOUSE') AS warehouse,
+    SUM(ps.pod_kategori='DELIVERED') AS kategori_delivered
     
 
 FROM shipment_fm s
@@ -489,8 +538,8 @@ GROUP BY
     }
     public function _get_origins()
     {
-        $this->db->select('tariff_code, province_name, district_name');
-        $this->db->group_by('province_name');
+        $this->db->select('tariff_code, province_name, district_name,region_in_jne');
+        $this->db->group_by('region_in_jne');
         $this->db->from('dest');
         $query = $this->db->get();
         return $query->result_array();
@@ -500,7 +549,7 @@ GROUP BY
         $this->db->select('tariff_code,district_name,province_name,city_name');
         $this->db->from('dest');
         $this->db->group_by('city_name');
-        $this->db->where('province_name', $origin);
+        $this->db->where('region_in_jne', $origin);
 
         $query = $this->db->get();
         return $query->result();
@@ -526,10 +575,10 @@ GROUP BY
 
     public function applyFilterDashboard($post)
     {
-        if (!empty($post['dateFrom']) && !empty($post['dateThru'])) {
-            $this->db->where('tgl >=', $post['dateFrom']);
-            $this->db->where('tgl <=', $post['dateThru']);
-        }
+        // if (!empty($post['dateFrom']) && !empty($post['dateThru'])) {
+        //     $this->db->where('tgl >=', $post['dateFrom']);
+        //     $this->db->where('tgl <=', $post['dateThru']);
+        // }
 
         if (!empty($post['origin'])) {
             $this->db->where('origin', $post['origin']);

@@ -123,6 +123,7 @@ class Lm_model extends CI_Model
         cust_type,
         pic_bdo,
         SUM(delivered_count) as delivered_count,
+        SUM(on_proses_count) as on_proses_count,
         SUM(un_inbound) as un_inbound,
         SUM(un_runsheet) as un_runsheet,
         SUM(open_pod) as open_pod,
@@ -135,7 +136,18 @@ class Lm_model extends CI_Model
         SUM(auto_close_irreg) as auto_close_irreg,
         SUM(auto_close_system) as auto_close_system,
         SUM(claim) as claim,
+        SUM(un_status_pod) as un_status_pod,
+        SUM(declare_missing) as declare_missing,
+        SUM(destroy) as destroy,
+        SUM(internal_problem) as internal_problem,
+        SUM(other) as other,
+        SUM(kategori_return) as kategori_return,
+        SUM(warehouse) as warehouse,
+        SUM(kategori_delivered) as kategori_delivered,
         SUM(total_shipment) as total_shipment
+
+         
+            
     ");
 
         $this->db->from('mv_shipment_lm');
@@ -197,7 +209,7 @@ class Lm_model extends CI_Model
         $post = $this->input->post();
 
         $this->db->select("
-        cnote_cust_no,
+         cnote_cust_no,
         customer_name,
         cust_type,
         pic_bdo,
@@ -214,7 +226,16 @@ class Lm_model extends CI_Model
         SUM(auto_close_irreg) as auto_close_irreg,
         SUM(auto_close_system) as auto_close_system,
         SUM(claim) as claim,
+        SUM(un_status_pod) as un_status_pod,
+        SUM(declare_missing) as declare_missing,
+        SUM(destroy) as destroy,
+        SUM(internal_problem) as internal_problem,
+        SUM(other) as other,
+        SUM(kategori_return) as kategori_return,
+        SUM(warehouse) as warehouse,
+        SUM(kategori_delivered) as kategori_delivered,
         SUM(total_shipment) as total_shipment
+
     ");
 
         $this->db->from('mv_shipment_lm');
@@ -317,7 +338,15 @@ class Lm_model extends CI_Model
             sla,
             id_pic,
             id_cust,
-            cust_type
+            cust_type,
+             un_status_pod,
+            declare_missing,
+            destroy,
+            internal_problem,
+            other,
+            kategori_return,
+            warehouse,
+            kategori_delivered
         )
 
        
@@ -337,22 +366,29 @@ class Lm_model extends CI_Model
             SUM(s.cnote_weight),
 
             SUM(CASE WHEN ps.Filter='Delivered' THEN 1 ELSE 0 END),
-            SUM(CASE WHEN ps.filter='On Proses' THEN 1 ELSE 0 END),
+           SUM(
+    CASE 
+        WHEN ps.filter = 'On Proses'
+          OR s.pod_code IS NULL
+          OR TRIM(s.pod_code) = ''
+        THEN 1
+        ELSE 0
+    END
+),
             SUM(CASE WHEN ps.filter='Return' THEN 1 ELSE 0 END),
 
             MAX(s.cnote_cust_no),  -- ⬅️ FIX
             SUM(CASE WHEN ps.pod_kategori='UN INBOUND' THEN 1 ELSE 0 END),
                                              
-            SUM(CASE WHEN s.runsheet_date IS NULL THEN 1 ELSE 0 END),
+            SUM(CASE WHEN s.lm_date IS NULL THEN 1 ELSE 0 END),
             SUM(CASE WHEN ps.pod_kategori='OPEN POD' THEN 1 ELSE 0 END),
             SUM(CASE WHEN ps.pod_kategori='UNDEL' THEN 1 ELSE 0 END),
             SUM(CASE WHEN ps.pod_kategori='CUSTOMER REQUEST' THEN 1 ELSE 0 END),
             SUM(CASE WHEN ps.pod_kategori='IRREGULARITY' THEN 1 ELSE 0 END),
             SUM(CASE WHEN ps.pod_kategori='UN RECEIVING' THEN 1 ELSE 0 END),
             SUM(CASE 
-            WHEN s.runsheet_date IS NULL 
-            AND s.lm_date IS NULL 
-            AND s.sla_due_date IS NULL 
+            WHEN s.manifest_date IS NULL 
+            
             THEN 1 ELSE 0 
             END),
             SUM(CASE WHEN ps.pod_kategori='AUTO CLOSE IRREG' THEN 1 ELSE 0 END),
@@ -370,7 +406,23 @@ class Lm_model extends CI_Model
             MAX(DATEDIFF(s.pod_date, s.cnot_date)),
             s.id_pic,            -- id_pic
             s.cnote_cust_no,          -- id_cust
-            s.cust_industry
+            s.cust_industry,
+            SUM(CASE 
+    WHEN
+    trim(s.pod_code)=''
+    OR s.pod_code IS NULL
+    THEN 1
+    ELSE 0
+    END
+    ),
+    SUM(ps.pod_kategori='DECLARE MISSING') AS declare_missing,
+    SUM(ps.pod_kategori='DESTROY') AS destroy,
+    SUM(ps.pod_kategori='INTERNAL PROBLEM') AS internal_problem,
+    SUM(ps.pod_kategori='OTHER') AS other,
+    SUM(ps.pod_kategori='RETURN') AS kategori_return,
+    SUM(ps.pod_kategori='WAREHOUSE') AS warehouse,
+    SUM(ps.pod_kategori='DELIVERED') AS kategori_delivered
+
 
         FROM shipment_lm s        
      
@@ -460,10 +512,10 @@ class Lm_model extends CI_Model
     }
     private function applyFilterDashboard($post)
     {
-        if (!empty($post['dateFrom']) && !empty($post['dateThru'])) {
-            $this->db->where('tgl >=', $post['dateFrom']);
-            $this->db->where('tgl <=', $post['dateThru']);
-        }
+        // if (!empty($post['dateFrom']) && !empty($post['dateThru'])) {
+        //     $this->db->where('tgl >=', $post['dateFrom']);
+        //     $this->db->where('tgl <=', $post['dateThru']);
+        // }
 
         if (!empty($post['origin'])) {
             $this->db->where('origin', $post['origin']);
